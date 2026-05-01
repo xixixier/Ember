@@ -1,0 +1,25 @@
+{
+  "emotionColors": {
+    "anger":      {"hue": 0,   "saturationBase": 0.7, "lightnessBase": 0.45},
+    "depression": {"hue": 220, "saturationBase": 0.3, "lightnessBase": 0.30},
+    "anxiety":    {"hue": 270, "saturationBase": 0.5, "lightnessBase": 0.40},
+    "breakdown":  {"hue": 340, "saturationBase": 0.6, "lightnessBase": 0.25},
+    "irritation": {"hue": 35,  "saturationBase": 0.6, "lightnessBase": 0.45},
+    "custom":     {"hue": 180, "saturationBase": 0.4, "lightnessBase": 0.35}
+  },
+  "intensityScale": {
+    "1": {"strokeWidth": 1.5, "elementCount": 8,  "speed": 0.3},
+    "2": {"strokeWidth": 2.0, "elementCount": 15, "speed": 0.5},
+    "3": {"strokeWidth": 3.0, "elementCount": 25, "speed": 0.7},
+    "4": {"strokeWidth": 4.0, "elementCount": 40, "speed": 0.9},
+    "5": {"strokeWidth": 5.5, "elementCount": 60, "speed": 1.2}
+  },
+  "styles": {
+    "anger":      {"shapes": ["jagged", "spiral", "burst"], "bgAlpha": 0.85},
+    "depression": {"shapes": ["droop", "layer", "mist"],   "bgAlpha": 0.90},
+    "anxiety":    {"shapes": ["tangle", "grid", "spiral"],  "bgAlpha": 0.80},
+    "breakdown":  {"shapes": ["shatter", "void", "crack"],  "bgAlpha": 0.75},
+    "irritation": {"shapes": ["scratch", "dot", "zigzag"],  "bgAlpha": 0.88},
+    "custom":     {"shapes": ["flow", "wave", "bubble"],    "bgAlpha": 0.85}
+  }
+}

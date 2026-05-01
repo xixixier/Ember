@@ -1,0 +1,69 @@
+# Flutter
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+*.iml
+*.swp
+*.swo
+/.idea/
+/.vscode/
+*.log
+
+# Android
+android/.gradle/
+android/app/build/
+android/local.properties
+android/**/src/**/debug/
+android/**/src/**/release/
+*.apk
+*.aab
+android/gradlew.bat
+
+# iOS
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/App.framework/
+ios/Flutter/engine/
+ios/Flutter/Flutter.podspec
+ios/Runner.xcworkspace/
+ios/Runner.xcodeproj/project.pbxproj
+ios/Runner.xcworkspace/xcshareddata/
+
+# macOS
+macos/Flutter/ephemeral/
+
+# Windows
+windows/flutter/ephemeral/
+
+# Linux
+linux/flutter/ephemeral/
+
+# Web
+web/icons/Icon-*.png
+
+# Symbols
+symbols/
+*.sym
+
+# Obfuscation
+app.*.map.json
+
+# LevelDB
+*.LDB
+*.SLOW
+
+# Cache
+*.publish_cache/
+
+# IDE
+.classpath
+.project
+.settings/
+*.prefs
+
+# Other
+**/*.g.dart
+**/*.freezed.dart
+**/*.mocks.dart

@@ -1,0 +1,48 @@
+name: ember
+description: "Ember（余烬）— 负面情绪释放工具"
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.11.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  flutter_riverpod: ^2.5.0
+  go_router: ^14.0.0
+  drift: ^2.15.0
+  drift_flutter: ^0.2.0
+  path_provider: ^2.1.0
+  uuid: ^4.3.0
+  lottie: ^3.1.0
+  flutter_animate: ^4.5.0
+  speech_to_text: ^7.0.0
+  workmanager: ^0.9.0
+  flutter_local_notifications: ^18.0.0
+  local_auth: ^2.2.0
+  local_auth_android: ^1.0.0
+  local_auth_darwin: ^1.0.0
+  flutter_secure_storage: ^9.2.0
+  sensors_plus: ^6.0.0
+  fl_chart: ^0.69.0
+  google_fonts: ^6.2.0
+  share_plus: ^12.0.2
+  shared_preferences: ^2.3.0
+  path: ^1.9.0
+  timezone: ^0.9.4
+  flutter_launcher_icons: ^0.14.4
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  drift_dev: ^2.15.0
+  build_runner: ^2.4.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/lottie/
+    - assets/templates/

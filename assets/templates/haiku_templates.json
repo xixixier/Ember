@@ -1,0 +1,29 @@
+{
+  "structures": [
+    {"pattern": [5, 7, 5]},
+    {"pattern": [5, 7, 5]},
+    {"pattern": [5, 7, 5]}
+  ],
+  "emotionWords": {
+    "anger": ["怒火", "烈焰", "雷鸣", "咆哮", "利刃", "灼烧", "暴风", "狂澜"],
+    "depression": ["暮色", "残叶", "孤影", "寒霜", "枯枝", "落日", "深潭", "暗潮"],
+    "anxiety": ["蛛丝", "迷雾", "浮萍", "乱线", "暗涌", "残梦", "蜃楼", "悬丝"],
+    "breakdown": ["碎玉", "裂痕", "深渊", "崩塌", "残垣", "断弦", "焚稿", "碎镜"],
+    "irritation": ["荆棘", "沙砾", "蚁行", "钝刀", "闷雷", "烟尘", "锈锁", "毛刺"],
+    "custom": ["暗流", "倒影", "微澜", "薄雾", "回声", "裂隙", "余烬", "残响"]
+  },
+  "natureWords": ["风", "雨", "月", "云", "山", "河", "霜", "雪", "叶", "花", "夜", "潮"],
+  "intensityWords": {
+    "1": ["微", "轻", "浅", "淡"],
+    "2": ["细", "小", "薄", "低"],
+    "3": ["正", "方", "半", "渐"],
+    "4": ["深", "重", "浓", "烈"],
+    "5": ["极", "尽", "碎", "灭"]
+  },
+  "templates": [
+    "{intensity}{emotionWord}——\n{nature}过{emotionWord}处\n{intensity}{nature}亦{emotionWord}",
+    "{emotionWord}如{nature}\n{intensity}{nature}声中无人应\n独坐{intensity}{nature}里",
+    "{intensity}{nature}已至\n{emotionWord}染{nature}{intensity}重\n{nature}{intensity}{emotionWord}深",
+    "谁{intensity}{nature}中{emotionWord}\n{nature}落{nature}起{intensity}回\n空余{intensity}{nature}声"
+  ]
+}
