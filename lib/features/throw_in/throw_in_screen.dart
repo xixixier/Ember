@@ -52,14 +52,30 @@ class _ThrowInScreenState extends ConsumerState<ThrowInScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Ember',
-          style: TextStyle(
-            color: colorScheme.primary,
-            fontWeight: FontWeight.w600,
-            fontSize: 20,
-          ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Ember',
+              style: TextStyle(
+                color: colorScheme.primary,
+                fontWeight: FontWeight.w700,
+                fontSize: 20,
+                letterSpacing: -0.3,
+              ),
+            ),
+            Text(
+              '说吧，没人看见',
+              style: TextStyle(
+                color: colorScheme.onSurfaceVariant,
+                fontSize: 11,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ],
         ),
+        toolbarHeight: 56,
       ),
       body: SafeArea(
         child: Stack(
@@ -80,76 +96,74 @@ class _ThrowInScreenState extends ConsumerState<ThrowInScreen> {
               focusNode: _focusNode,
             ),
 
-            // 已选标签展示行
-            if (state.emotion != Emotion.anger ||
-                state.target != Target.none ||
-                state.intensity != 3)
-              _buildSelectedTags(context, state, controller),
-
-            // 元数据按钮行
+            // 元数据标签行（设计稿：横向滚动标签条）
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _MetaChip(
-                    icon: Icons.emoji_emotions,
-                    label: '情绪',
-                    value: state.emotion.emoji,
-                    highlight: state.emotion != Emotion.anger,
-                    onTap: () async {
-                      final result = await EmotionPicker.show(
-                        context,
-                        current: state.emotion,
-                      );
-                      if (result != null) controller.setEmotion(result);
-                    },
-                  ),
-                  _MetaChip(
-                    icon: Icons.my_location,
-                    label: '对象',
-                    value: state.target == Target.none ? null : state.target.label,
-                    highlight: state.target != Target.none,
-                    onTap: () async {
-                      final result = await TargetPicker.show(
-                        context,
-                        current: state.target,
-                      );
-                      if (result != null) controller.setTarget(result);
-                    },
-                  ),
-                  _MetaChip(
-                    icon: Icons.local_fire_department,
-                    label: '烈度',
-                    value: '${state.intensity}',
-                    highlight: state.intensity != 3,
-                    valueColor: ColorTokens.intensityColors[state.intensity - 1],
-                    onTap: () async {
-                      final result = await IntensitySlider.show(
-                        context,
-                        current: state.intensity,
-                      );
-                      if (result != null) controller.setIntensity(result);
-                    },
-                  ),
-                  _MetaChip(
-                    icon: Icons.timer,
-                    label: '销毁',
-                    value: state.destroyTime.label,
-                    highlight: state.destroyTime != DestroyTime.hours24,
-                    onTap: () async {
-                      final result = await DestroyTimePicker.show(
-                        context,
-                        currentTime: state.destroyTime,
-                        currentStyle: state.destroyStyle,
-                      );
-                      if (result != null) {
-                        controller.setDestroyTime(result.time);
-                        controller.setDestroyStyle(result.style);
-                      }
-                    },
-                  ),
-                ],
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _MetaTag(
+                      emoji: state.emotion.emoji,
+                      label: state.emotion.label,
+                      color: state.emotion.color,
+                      highlight: state.emotion != Emotion.anger,
+                      onTap: () async {
+                        final result = await EmotionPicker.show(
+                          context,
+                          current: state.emotion,
+                        );
+                        if (result != null) controller.setEmotion(result);
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    _MetaTag(
+                      emoji: '🎯',
+                      label: state.target == Target.none ? '对象' : state.target.label,
+                      color: colorScheme.primary,
+                      highlight: state.target != Target.none,
+                      onTap: () async {
+                        final result = await TargetPicker.show(
+                          context,
+                          current: state.target,
+                        );
+                        if (result != null) controller.setTarget(result);
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    _MetaTag(
+                      emoji: '🔥',
+                      label: '烈度 ${state.intensity}/5',
+                      color: ColorTokens.intensityColors[state.intensity - 1],
+                      highlight: state.intensity != 3,
+                      onTap: () async {
+                        final result = await IntensitySlider.show(
+                          context,
+                          current: state.intensity,
+                        );
+                        if (result != null) controller.setIntensity(result);
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    _MetaTag(
+                      emoji: '⏱',
+                      label: state.destroyTime.label,
+                      color: colorScheme.tertiary,
+                      highlight: state.destroyTime != DestroyTime.hours24,
+                      onTap: () async {
+                        final result = await DestroyTimePicker.show(
+                          context,
+                          currentTime: state.destroyTime,
+                          currentStyle: state.destroyStyle,
+                        );
+                        if (result != null) {
+                          controller.setDestroyTime(result.time);
+                          controller.setDestroyStyle(result.style);
+                        }
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
 
@@ -329,59 +343,21 @@ class _ThrowInScreenState extends ConsumerState<ThrowInScreen> {
       ),
     );
   }
-
-  /// 已选标签展示
-  Widget _buildSelectedTags(
-    BuildContext context,
-    ThrowInState state,
-    ThrowInController controller,
-  ) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
-      child: Wrap(
-        spacing: 6,
-        children: [
-          if (state.emotion != Emotion.anger)
-            _TagChip(
-              label: '${state.emotion.emoji} ${state.emotion.label}',
-              color: state.emotion.color,
-              onDismiss: () => controller.setEmotion(Emotion.anger),
-            ),
-          if (state.target != Target.none)
-            _TagChip(
-              label: state.target.label,
-              color: colorScheme.primary,
-              onDismiss: () => controller.setTarget(Target.none),
-            ),
-          if (state.intensity != 3)
-            _TagChip(
-              label: '${ColorTokens.intensityLabels[state.intensity - 1]} ${state.intensity}/5',
-              color: ColorTokens.intensityColors[state.intensity - 1],
-              onDismiss: () => controller.setIntensity(3),
-            ),
-        ],
-      ),
-    );
-  }
 }
 
-/// 元数据按钮
-class _MetaChip extends StatelessWidget {
-  final IconData icon;
+/// 横向标签（设计稿样式：圆角胶囊 + emoji + 文字）
+class _MetaTag extends StatelessWidget {
+  final String emoji;
   final String label;
-  final String? value;
+  final Color color;
   final bool highlight;
-  final Color? valueColor;
   final VoidCallback onTap;
 
-  const _MetaChip({
-    required this.icon,
+  const _MetaTag({
+    required this.emoji,
     required this.label,
-    this.value,
+    required this.color,
     this.highlight = false,
-    this.valueColor,
     required this.onTap,
   });
 
@@ -391,52 +367,37 @@ class _MetaChip extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            color: highlight ? (valueColor ?? colorScheme.primary) : colorScheme.onSurfaceVariant,
-            size: 22,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: highlight
+              ? color.withValues(alpha: 0.15)
+              : colorScheme.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: highlight
+                ? color.withValues(alpha: 0.5)
+                : colorScheme.outline.withValues(alpha: 0.2),
+            width: highlight ? 1.0 : 0.5,
           ),
-          const SizedBox(height: 2),
-          Text(
-            value ?? label,
-            style: TextStyle(
-              color: highlight ? (valueColor ?? colorScheme.primary) : colorScheme.onSurfaceVariant,
-              fontSize: 10,
-              fontWeight: highlight ? FontWeight.w600 : FontWeight.w400,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(emoji, style: const TextStyle(fontSize: 14)),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: TextStyle(
+                color: highlight ? color : colorScheme.onSurfaceVariant,
+                fontSize: 12,
+                fontWeight: highlight ? FontWeight.w600 : FontWeight.w400,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    );
-  }
-}
-
-/// 已选标签
-class _TagChip extends StatelessWidget {
-  final String label;
-  final Color color;
-  final VoidCallback onDismiss;
-
-  const _TagChip({
-    required this.label,
-    required this.color,
-    required this.onDismiss,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Chip(
-      label: Text(label, style: TextStyle(color: color, fontSize: 11)),
-      deleteIcon: Icon(Icons.close, size: 14, color: color),
-      onDeleted: onDismiss,
-      visualDensity: VisualDensity.compact,
-      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      side: BorderSide(color: color.withValues(alpha: 0.3)),
-      backgroundColor: color.withValues(alpha: 0.1),
-      deleteButtonTooltipMessage: '移除',
     );
   }
 }

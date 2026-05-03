@@ -110,7 +110,8 @@ class HeatMapCalendarPainter extends CustomPainter {
       if (data != null) {
         // 有数据：根据情绪着色
         final baseColor = data.emotionColor;
-        var alpha = (0.3 + (data.count / 10).clamp(0.0, 1.0) * 0.7) * cellAlpha;
+        // 设计稿：颜色更鲜明，最低透明度提升到 0.5，最高 1.0
+        var alpha = (0.5 + (data.count / 6).clamp(0.0, 1.0) * 0.5) * cellAlpha;
 
         // 高烈度日期（count >= 4）闪烁
         if (data.count >= 4 && pulseValue > 0) {
@@ -139,19 +140,19 @@ class HeatMapCalendarPainter extends CustomPainter {
           Paint()..color = baseColor.withValues(alpha: cellAlpha),
         );
       } else {
-        // 无数据：暗色空格
+        // 无数据：暗色空格（稍增透明度以显示格子结构）
         canvas.drawRRect(
           rrect,
           Paint()
-            ..color = emptyColor.withValues(alpha: cellAlpha)
+            ..color = emptyColor.withValues(alpha: cellAlpha * 0.9)
             ..style = PaintingStyle.fill,
         );
         _drawText(
           canvas,
           '$day',
           Offset(x + cellSize / 2, y + cellSize / 2),
-          12,
-          emptyColor.withValues(alpha: cellAlpha),
+          11,
+          emptyColor.withValues(alpha: cellAlpha * 0.6),
         );
       }
 

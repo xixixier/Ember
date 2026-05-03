@@ -177,7 +177,7 @@ class EmberThemeExtension extends ThemeExtension<EmberThemeExtension> {
     // 热力图
     heatMapHeader: Color(0x89FFFFFF), // white54
     heatMapDayText: Color(0xB3FFFFFF), // white70
-    heatMapEmpty: Color(0x0AFFFFFF), // white04
+    heatMapEmpty: Color(0x1AFFFFFF), // white10 — 稍亮，格子结构更清晰
     heatMapSelectedBorder: Color(0xFFFFFFFF), // white
     // 引导页
     onboardingWelcome: Color(0xFFE8915A),
@@ -231,7 +231,7 @@ class EmberThemeExtension extends ThemeExtension<EmberThemeExtension> {
     // 热力图
     heatMapHeader: Color(0x89F0EBE3),
     heatMapDayText: Color(0xB3F0EBE3),
-    heatMapEmpty: Color(0x0AF0EBE3),
+    heatMapEmpty: Color(0x18F0EBE3), // 稍亮
     heatMapSelectedBorder: Color(0xFFF0EBE3),
     // 引导页
     onboardingWelcome: Color(0xFFD4A574),
@@ -285,7 +285,7 @@ class EmberThemeExtension extends ThemeExtension<EmberThemeExtension> {
     // 热力图
     heatMapHeader: Color(0x89E0E8F0),
     heatMapDayText: Color(0xB3E0E8F0),
-    heatMapEmpty: Color(0x0AE0E8F0),
+    heatMapEmpty: Color(0x18E0E8F0), // 稍亮
     heatMapSelectedBorder: Color(0xFFE0E8F0),
     // 引导页
     onboardingWelcome: Color(0xFF6EA4BF),
@@ -339,7 +339,7 @@ class EmberThemeExtension extends ThemeExtension<EmberThemeExtension> {
     // 热力图
     heatMapHeader: Color(0x89ECECEC),
     heatMapDayText: Color(0xB3ECECEC),
-    heatMapEmpty: Color(0x0AECECEC),
+    heatMapEmpty: Color(0x18ECECEC), // 稍亮
     heatMapSelectedBorder: Color(0xFFECECEC),
     // 引导页
     onboardingWelcome: Color(0xFFFF6B22),
