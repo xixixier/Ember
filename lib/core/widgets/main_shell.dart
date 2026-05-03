@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/throw_in/throw_in_screen.dart';
 import '../../features/transform/collection_screen.dart';
+import '../../features/destroy/screens/to_destroy_screen.dart';
 import '../../features/review/screens/calendar_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/settings/screens/privacy_policy_screen.dart';
@@ -39,6 +40,15 @@ class MainShell extends StatelessWidget {
               path: '/collection',
               pageBuilder: (context, state) => _fadeSlide(
                 const CollectionScreen(),
+                state,
+              ),
+            ),
+          ]),
+          StatefulShellBranch(routes: [
+            GoRoute(
+              path: '/to-destroy',
+              pageBuilder: (context, state) => _fadeSlide(
+                const ToDestroyScreen(),
                 state,
               ),
             ),

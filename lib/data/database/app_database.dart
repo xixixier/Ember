@@ -55,6 +55,31 @@ class EntryDao extends DatabaseAccessor<AppDatabase> with _$EntryDaoMixin {
   Future<Entry?> getById(String id) =>
       (select(entries)..where((t) => t.id.equals(id))).getSingleOrNull();
 
+  /// 监听待毁条目（未销毁 + 销毁时间在未来）
+  /// 用于「待毁」Tab 实时显示
+  Stream<List<Entry>> watchPendingDestroyEntries(int nowSeconds) =>
+      (select(entries)
+            ..where((t) =>
+                t.isDestroyed.equals(false) &
+                t.destroyAt.isBiggerThanValue(nowSeconds))
+            ..orderBy([(t) => OrderingTerm.asc(t.destroyAt)]))
+          .watch();
+
+  /// 取消销毁（将销毁时间设为7天后，相当于暂缓）
+  Future<void> cancelDestroy(String id) {
+    final sevenDaysLater = DateTime.now().millisecondsSinceEpoch ~/ 1000 +
+        7 * 24 * 3600;
+    return (update(entries)..where((t) => t.id.equals(id)))
+        .write(EntriesCompanion(destroyAt: Value(sevenDaysLater)));
+  }
+
+  /// 获取已销毁条目
+  Stream<List<Entry>> watchDestroyedEntries() =>
+      (select(entries)
+            ..where((t) => t.isDestroyed.equals(true))
+            ..orderBy([(t) => OrderingTerm.desc(t.destroyedAt)]))
+          .watch();
+
   Future<void> clearVoicePath(String id) => (update(entries)
         ..where((t) => t.id.equals(id)))
       .write(const EntriesCompanion(voicePath: Value.absent()));

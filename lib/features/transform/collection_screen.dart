@@ -39,6 +39,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
           style: TextStyle(
             color: colorScheme.primary,
             fontWeight: FontWeight.w600,
+            fontSize: 18,
           ),
         ),
       ),

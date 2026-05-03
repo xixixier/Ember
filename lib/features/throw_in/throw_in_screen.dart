@@ -21,7 +21,7 @@ import 'package:ember/features/transform/engines/transform_engine_registry.dart'
 import 'package:ember/features/transform/widgets/transform_selector.dart';
 import 'package:ember/features/transform/widgets/transform_result_card.dart';
 import 'package:ember/features/transform/widgets/collect_snackbar.dart';
-import 'package:ember/features/destroy/animations/destroy_animation_factory.dart';
+import 'package:ember/features/destroy/screens/destroy_countdown_screen.dart';
 import 'package:ember/core/widgets/ember_breath_background.dart';
 import 'package:ember/core/widgets/ember_particle_field.dart';
 
@@ -310,18 +310,14 @@ class _ThrowInScreenState extends ConsumerState<ThrowInScreen> {
     if (!mounted) return;
 
     if (state.destroyTime == DestroyTime.now) {
-      // 立刻销毁：播放动画
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (ctx) => DestroyAnimationFactory.create(
-          style: state.destroyStyle,
-          intensity: state.intensity,
-          textHint: '已化为灰烬',
-          onComplete: () {
-            Navigator.of(ctx).pop();
-          },
-        ),
+      // 立刻销毁：显示全屏倒计时页面（3秒）
+      DestroyCountdownScreen.show(
+        context,
+        remainingSeconds: 3,
+        content: _textController.text.isEmpty ? '' : _textController.text,
+        emotion: state.emotion,
+        intensity: state.intensity,
+        destroyStyle: state.destroyStyle,
       );
     }
   }

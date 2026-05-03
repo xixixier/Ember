@@ -43,6 +43,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           style: TextStyle(
             color: colorScheme.primary,
             fontWeight: FontWeight.w600,
+            fontSize: 18,
           ),
         ),
         actions: [

@@ -17,6 +17,7 @@ class EmberNavigationBar extends StatelessWidget {
   static const _destinations = [
     _NavDestination(icon: Icons.local_fire_department_outlined, activeIcon: Icons.local_fire_department, label: '投放'),
     _NavDestination(icon: Icons.auto_awesome_outlined, activeIcon: Icons.auto_awesome, label: '收藏'),
+    _NavDestination(icon: Icons.whatshot_outlined, activeIcon: Icons.whatshot, label: '待毁'),
     _NavDestination(icon: Icons.bar_chart_outlined, activeIcon: Icons.bar_chart, label: '回望'),
     _NavDestination(icon: Icons.person_outline, activeIcon: Icons.person, label: '我的'),
   ];
