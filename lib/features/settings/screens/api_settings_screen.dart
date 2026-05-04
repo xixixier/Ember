@@ -4,8 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:ember/core/services/ai_api_service.dart';
 import 'package:ember/core/theme/ember_theme_extension.dart';
 
-/// AI API 配置页面
-/// 支持 OpenAI / DeepSeek / 通义千问 / 本地 Ollama 等兼容格式
+/// AI API 配置页面（参照 rikkahub Provider 架构）
+/// 支持选择内置提供商、自定义 API 地址、自定义请求头
 class ApiSettingsScreen extends StatefulWidget {
   const ApiSettingsScreen({super.key});
 
@@ -14,42 +14,25 @@ class ApiSettingsScreen extends StatefulWidget {
 }
 
 class _ApiSettingsScreenState extends State<ApiSettingsScreen> {
+  ApiProvider _selectedProvider = ApiProvider.openai;
+
   final _apiKeyController = TextEditingController();
   final _baseUrlController = TextEditingController();
   final _modelController = TextEditingController();
+  final _maxTokensController = TextEditingController(text: '600');
+
+  // 自定义请求头
+  final List<_HeaderRow> _customHeaders = [];
+
   bool _obscureKey = true;
   bool _loading = true;
   bool _saving = false;
   String? _testResult;
   bool _testOk = false;
 
-  // 快捷预设
-  static const _presets = [
-    _ApiPreset(
-      name: 'OpenAI',
-      url: 'https://api.openai.com',
-      model: 'gpt-3.5-turbo',
-      icon: '🤖',
-    ),
-    _ApiPreset(
-      name: 'DeepSeek',
-      url: 'https://api.deepseek.com',
-      model: 'deepseek-chat',
-      icon: '🌊',
-    ),
-    _ApiPreset(
-      name: '通义千问',
-      url: 'https://dashscope.aliyuncs.com/compatible-mode',
-      model: 'qwen-turbo',
-      icon: '🌐',
-    ),
-    _ApiPreset(
-      name: 'Ollama',
-      url: 'http://localhost:11434',
-      model: 'llama3',
-      icon: '🦙',
-    ),
-  ];
+  // 模型列表
+  List<String>? _fetchedModels;
+  bool _loadingModels = false;
 
   @override
   void initState() {
@@ -59,11 +42,25 @@ class _ApiSettingsScreenState extends State<ApiSettingsScreen> {
 
   Future<void> _loadExisting() async {
     await AiApiService.instance.loadSettings();
+    final svc = AiApiService.instance;
     if (mounted) {
       setState(() {
-        _apiKeyController.text = AiApiService.instance.apiKey;
-        _baseUrlController.text = AiApiService.instance.baseUrl;
-        _modelController.text = AiApiService.instance.model;
+        _selectedProvider = svc.provider;
+        _apiKeyController.text = svc.apiKey;
+        _baseUrlController.text = svc.baseUrl;
+        _modelController.text = svc.model;
+        _maxTokensController.text = svc.maxTokens.toString();
+
+        // 自定义请求头
+        _customHeaders
+          ..clear()
+          ..addAll(svc.customHeaders.map(
+            (h) => _HeaderRow(key: h.key, value: h.value),
+          ));
+        if (_customHeaders.isEmpty) {
+          _customHeaders.add(_HeaderRow());
+        }
+
         _loading = false;
       });
     }
@@ -74,15 +71,63 @@ class _ApiSettingsScreenState extends State<ApiSettingsScreen> {
     _apiKeyController.dispose();
     _baseUrlController.dispose();
     _modelController.dispose();
+    _maxTokensController.dispose();
+    for (final h in _customHeaders) {
+      h.dispose();
+    }
     super.dispose();
+  }
+
+  void _applyProvider(ApiProvider provider) {
+    setState(() {
+      _selectedProvider = provider;
+      if (_baseUrlController.text.isEmpty ||
+          ApiProvider.values.any((p) =>
+              p.defaultBaseUrl.isNotEmpty &&
+              _baseUrlController.text.contains(
+                  p.defaultBaseUrl.replaceAll(RegExp(r'https?://'), '')))) {
+        _baseUrlController.text = provider.defaultBaseUrl;
+      }
+      if (_modelController.text.isEmpty ||
+          provider.defaultModels.contains(_modelController.text)) {
+        // 保持当前模型（如果它在新提供商的默认列表中）
+      } else if (provider.defaultModel.isNotEmpty) {
+        _modelController.text = provider.defaultModel;
+      }
+      _testResult = null;
+    });
+  }
+
+  Future<void> _fetchModels() async {
+    setState(() => _loadingModels = true);
+    final models = await AiApiService.instance.fetchModels();
+    if (mounted) {
+      setState(() {
+        _fetchedModels = models;
+        _loadingModels = false;
+      });
+    }
+  }
+
+  List<CustomHeader> _buildCustomHeaders() {
+    return _customHeaders
+        .where((h) => h.keyController.text.trim().isNotEmpty)
+        .map((h) => CustomHeader(
+              key: h.keyController.text.trim(),
+              value: h.valueController.text.trim(),
+            ))
+        .toList();
   }
 
   Future<void> _save() async {
     setState(() => _saving = true);
     await AiApiService.instance.saveSettings(
+      provider: _selectedProvider,
       apiKey: _apiKeyController.text.trim(),
       baseUrl: _baseUrlController.text.trim(),
       model: _modelController.text.trim(),
+      customHeaders: _buildCustomHeaders(),
+      maxTokens: int.tryParse(_maxTokensController.text) ?? 600,
     );
     if (mounted) {
       setState(() => _saving = false);
@@ -101,18 +146,17 @@ class _ApiSettingsScreenState extends State<ApiSettingsScreen> {
       _testResult = null;
       _saving = true;
     });
-    // 先保存
+    // 先保存再测试
     await AiApiService.instance.saveSettings(
+      provider: _selectedProvider,
       apiKey: _apiKeyController.text.trim(),
       baseUrl: _baseUrlController.text.trim(),
       model: _modelController.text.trim(),
+      customHeaders: _buildCustomHeaders(),
+      maxTokens: int.tryParse(_maxTokensController.text) ?? 600,
     );
     try {
-      final result = await AiApiService.instance.chat(
-        systemPrompt: '你是一个测试机器人，只需回复"连接成功"四个字。',
-        userMessage: '测试',
-        temperature: 0.1,
-      );
+      final result = await AiApiService.instance.testConnection();
       if (mounted) {
         setState(() {
           _testResult = '✅ $result';
@@ -131,21 +175,15 @@ class _ApiSettingsScreenState extends State<ApiSettingsScreen> {
     }
   }
 
-  void _applyPreset(_ApiPreset preset) {
-    setState(() {
-      _baseUrlController.text = preset.url;
-      _modelController.text = preset.model;
-      _testResult = null;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final ext = Theme.of(context).extension<EmberThemeExtension>()!;
 
     if (_loading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
     }
 
     return Scaffold(
@@ -163,15 +201,12 @@ class _ApiSettingsScreenState extends State<ApiSettingsScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         children: [
           // 说明卡片
-          _InfoCard(
-            ext: ext,
-            colorScheme: colorScheme,
-          ),
+          _InfoCard(ext: ext, colorScheme: colorScheme),
           const SizedBox(height: 20),
 
-          // 快捷预设
+          // 提供商选择
           Text(
-            '快捷预设',
+            '选择 API 提供商',
             style: TextStyle(
               color: colorScheme.onSurface,
               fontSize: 14,
@@ -183,17 +218,15 @@ class _ApiSettingsScreenState extends State<ApiSettingsScreen> {
             height: 56,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
-              itemCount: _presets.length,
+              itemCount: ApiProvider.values.length,
               separatorBuilder: (context, _) => const SizedBox(width: 8),
               itemBuilder: (context, i) {
-                final preset = _presets[i];
-                final selected = _baseUrlController.text.startsWith(
-                  preset.url.split('//').last.split('/').first,
-                );
-                return _PresetChip(
-                  preset: preset,
+                final provider = ApiProvider.values[i];
+                final selected = _selectedProvider == provider;
+                return _ProviderChip(
+                  provider: provider,
                   selected: selected,
-                  onTap: () => _applyPreset(preset),
+                  onTap: () => _applyProvider(provider),
                   colorScheme: colorScheme,
                   ext: ext,
                 );
@@ -203,115 +236,212 @@ class _ApiSettingsScreenState extends State<ApiSettingsScreen> {
           const SizedBox(height: 20),
 
           // API Key
-          Text(
-            'API Key',
-            style: TextStyle(
-              color: colorScheme.onSurface,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+          _buildLabel('API Key', colorScheme),
           const SizedBox(height: 8),
           TextField(
             controller: _apiKeyController,
             obscureText: _obscureKey,
-            decoration: InputDecoration(
-              hintText: 'sk-...',
-              hintStyle: TextStyle(color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
-              filled: true,
-              fillColor: colorScheme.surfaceContainerHigh,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
-              ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              suffixIcon: Row(
+            decoration: _inputDec(
+              colorScheme,
+              hint: _selectedProvider == ApiProvider.ollama
+                  ? '本地 Ollama 通常不需要 Key'
+                  : 'sk-...',
+              suffix: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   IconButton(
                     icon: Icon(
-                      _obscureKey ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                      _obscureKey
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
                       size: 18,
                       color: colorScheme.onSurfaceVariant,
                     ),
-                    onPressed: () => setState(() => _obscureKey = !_obscureKey),
+                    onPressed: () =>
+                        setState(() => _obscureKey = !_obscureKey),
                   ),
-                  IconButton(
-                    icon: Icon(Icons.copy_outlined, size: 18, color: colorScheme.onSurfaceVariant),
-                    onPressed: () {
-                      Clipboard.setData(ClipboardData(text: _apiKeyController.text));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('已复制'), duration: Duration(seconds: 1)),
-                      );
-                    },
-                  ),
+                  if (_apiKeyController.text.isNotEmpty)
+                    IconButton(
+                      icon: Icon(Icons.copy_outlined,
+                          size: 18, color: colorScheme.onSurfaceVariant),
+                      onPressed: () {
+                        Clipboard.setData(
+                            ClipboardData(text: _apiKeyController.text));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('已复制'),
+                              duration: Duration(seconds: 1)),
+                        );
+                      },
+                    ),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
 
           // Base URL
-          Text(
-            'API 地址（Base URL）',
-            style: TextStyle(
-              color: colorScheme.onSurface,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+          _buildLabel('API 地址（Base URL）', colorScheme),
           const SizedBox(height: 8),
           TextField(
             controller: _baseUrlController,
             keyboardType: TextInputType.url,
-            decoration: InputDecoration(
-              hintText: 'https://api.openai.com',
-              hintStyle: TextStyle(color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
-              filled: true,
-              fillColor: colorScheme.surfaceContainerHigh,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
-              ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: _inputDec(
+              colorScheme,
+              hint: _selectedProvider.defaultBaseUrl.isNotEmpty
+                  ? _selectedProvider.defaultBaseUrl
+                  : 'https://your-api.com',
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
 
-          // 模型名
+          // 模型名称
+          Row(
+            children: [
+              Expanded(child: _buildLabel('模型名称', colorScheme)),
+              if (_fetchedModels != null)
+                Text(
+                  '${_fetchedModels!.length} 个可用',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _modelController,
+                  decoration: _inputDec(
+                    colorScheme,
+                    hint: _selectedProvider.defaultModel.isNotEmpty
+                        ? _selectedProvider.defaultModel
+                        : '模型名称',
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton(
+                onPressed: _loadingModels ? null : _fetchModels,
+                style: OutlinedButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 14),
+                ),
+                child: _loadingModels
+                    ? SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: colorScheme.primary,
+                        ),
+                      )
+                    : const Text('获取模型', style: TextStyle(fontSize: 12)),
+              ),
+            ],
+          ),
+
+          // 模型列表（获取成功后显示）
+          if (_fetchedModels != null && _fetchedModels!.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('可用模型（点击选择）',
+                      style: TextStyle(
+                          fontSize: 11,
+                          color: colorScheme.onSurfaceVariant)),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: _fetchedModels!.map((m) {
+                      final selected = _modelController.text == m;
+                      return GestureDetector(
+                        onTap: () =>
+                            setState(() => _modelController.text = m),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: selected
+                                ? colorScheme.primary.withValues(alpha: 0.15)
+                                : colorScheme.surfaceContainerHigh,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: selected
+                                  ? colorScheme.primary
+                                  : Colors.transparent,
+                              width: selected ? 1 : 0,
+                            ),
+                          ),
+                          child: Text(
+                            m,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: selected
+                                  ? colorScheme.primary
+                                  : colorScheme.onSurface,
+                              fontWeight: selected
+                                  ? FontWeight.w600
+                                  : FontWeight.w400,
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 14),
+
+          // Max Tokens
+          _buildLabel('最大 Token 数', colorScheme),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _maxTokensController,
+            keyboardType: TextInputType.number,
+            decoration: _inputDec(colorScheme, hint: '600'),
+          ),
+          const SizedBox(height: 20),
+
+          // 自定义请求头
+          _buildLabel('自定义请求头（可选）', colorScheme),
+          const SizedBox(height: 6),
           Text(
-            '模型名称',
+            '部分 API 中转服务需要额外的请求头（如 X-Request-ID）',
             style: TextStyle(
-              color: colorScheme.onSurface,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
+              fontSize: 11,
+              color: colorScheme.onSurfaceVariant,
+              height: 1.4,
             ),
           ),
           const SizedBox(height: 8),
-          TextField(
-            controller: _modelController,
-            decoration: InputDecoration(
-              hintText: 'gpt-3.5-turbo',
-              hintStyle: TextStyle(color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
-              filled: true,
-              fillColor: colorScheme.surfaceContainerHigh,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
-              ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          ..._buildCustomHeaderRows(colorScheme),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: () =>
+                setState(() => _customHeaders.add(_HeaderRow())),
+            icon: const Icon(Icons.add, size: 16),
+            label: const Text('添加请求头', style: TextStyle(fontSize: 12)),
+            style: OutlinedButton.styleFrom(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+              padding: const EdgeInsets.symmetric(vertical: 10),
             ),
           ),
           const SizedBox(height: 24),
@@ -383,58 +513,122 @@ class _ApiSettingsScreenState extends State<ApiSettingsScreen> {
             ],
           ),
 
+          const SizedBox(height: 24),
+
+          // 清除配置
+          Center(
+            child: TextButton(
+              onPressed: () async {
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('清除配置'),
+                    content: const Text('确定要清除所有 API 配置吗？'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(ctx).pop(false),
+                        child: const Text('取消'),
+                      ),
+                      FilledButton(
+                        onPressed: () => Navigator.of(ctx).pop(true),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: colorScheme.error,
+                        ),
+                        child: const Text('清除'),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirmed == true) {
+                  await AiApiService.instance.clearSettings();
+                  _loadExisting();
+                }
+              },
+              child: Text(
+                '清除配置',
+                style: TextStyle(
+                  color: colorScheme.error,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+          ),
+
           const SizedBox(height: 32),
 
           // 隐私说明
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.shield_outlined, size: 14, color: colorScheme.onSurfaceVariant),
-                    const SizedBox(width: 6),
-                    Text(
-                      '隐私说明',
-                      style: TextStyle(
-                        color: colorScheme.onSurfaceVariant,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '• API Key 仅存储在本设备，不上传到任何服务器\n'
-                  '• 转化时会向你配置的 API 地址发送情绪文本\n'
-                  '• 建议使用专用的低权限 API Key\n'
-                  '• 不配置 API 时，将使用本地内置模板',
-                  style: TextStyle(
-                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.75),
-                    fontSize: 12,
-                    height: 1.6,
-                  ),
-                ),
-              ],
-            ),
-          ),
+          _PrivacyCard(colorScheme: colorScheme),
           const SizedBox(height: 24),
         ],
       ),
     );
   }
+
+  List<Widget> _buildCustomHeaderRows(ColorScheme cs) {
+    return List.generate(_customHeaders.length, (i) {
+      final row = _customHeaders[i];
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Row(
+          children: [
+            Expanded(
+              flex: 2,
+              child: TextField(
+                controller: row.keyController,
+                decoration: _inputDec(cs,
+                    hint: 'Header 名称（如 X-Custom）'),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              flex: 3,
+              child: TextField(
+                controller: row.valueController,
+                decoration: _inputDec(cs, hint: '值'),
+              ),
+            ),
+            const SizedBox(width: 4),
+            IconButton(
+              icon: Icon(Icons.remove_circle_outline,
+                  size: 18, color: cs.error),
+              onPressed: () => setState(() => _customHeaders.removeAt(i)),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  Widget _buildLabel(String text, ColorScheme cs) => Text(text,
+      style: TextStyle(
+          color: cs.onSurface, fontSize: 14, fontWeight: FontWeight.w600));
+
+  InputDecoration _inputDec(ColorScheme cs,
+      {String? hint, Widget? suffix}) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: TextStyle(color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
+      filled: true,
+      fillColor: cs.surfaceContainerHigh,
+      border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: cs.primary, width: 1.5),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      suffixIcon: suffix,
+    );
+  }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  组件
+// ─────────────────────────────────────────────────────────────────────────────
 
 class _InfoCard extends StatelessWidget {
   final EmberThemeExtension ext;
   final ColorScheme colorScheme;
-
   const _InfoCard({required this.ext, required this.colorScheme});
 
   @override
@@ -495,29 +689,15 @@ class _InfoCard extends StatelessWidget {
   }
 }
 
-class _ApiPreset {
-  final String name;
-  final String url;
-  final String model;
-  final String icon;
-
-  const _ApiPreset({
-    required this.name,
-    required this.url,
-    required this.model,
-    required this.icon,
-  });
-}
-
-class _PresetChip extends StatelessWidget {
-  final _ApiPreset preset;
+class _ProviderChip extends StatelessWidget {
+  final ApiProvider provider;
   final bool selected;
   final VoidCallback onTap;
   final ColorScheme colorScheme;
   final EmberThemeExtension ext;
 
-  const _PresetChip({
-    required this.preset,
+  const _ProviderChip({
+    required this.provider,
     required this.selected,
     required this.onTap,
     required this.colorScheme,
@@ -546,10 +726,10 @@ class _PresetChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(preset.icon, style: const TextStyle(fontSize: 16)),
+            Text(provider.icon, style: const TextStyle(fontSize: 16)),
             const SizedBox(width: 6),
             Text(
-              preset.name,
+              provider.name,
               style: TextStyle(
                 color: selected ? colorScheme.primary : colorScheme.onSurface,
                 fontSize: 13,
@@ -560,5 +740,70 @@ class _PresetChip extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _PrivacyCard extends StatelessWidget {
+  final ColorScheme colorScheme;
+  const _PrivacyCard({required this.colorScheme});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.shield_outlined,
+                  size: 14, color: colorScheme.onSurfaceVariant),
+              const SizedBox(width: 6),
+              Text(
+                '隐私说明',
+                style: TextStyle(
+                  color: colorScheme.onSurfaceVariant,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '• API Key 仅存储在本设备，不上传到任何服务器\n'
+            '• 转化时会向你配置的 API 地址发送情绪文本\n'
+            '• 建议使用专用的低权限 API Key\n'
+            '• 不配置 API 时，将使用本地内置模板',
+            style: TextStyle(
+              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.75),
+              fontSize: 12,
+              height: 1.6,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  辅助类
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _HeaderRow {
+  final TextEditingController keyController;
+  final TextEditingController valueController;
+  _HeaderRow({String key = '', String value = ''})
+      : keyController = TextEditingController(text: key),
+        valueController = TextEditingController(text: value);
+
+  void dispose() {
+    keyController.dispose();
+    valueController.dispose();
   }
 }
