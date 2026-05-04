@@ -355,7 +355,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ListTile(
             leading: const Icon(Icons.info_outline),
             title: const Text('版本'),
-            trailing: Text('1.2.0',
+            trailing: Text('1.2.1',
                 style: TextStyle(color: theme.colorScheme.onSurfaceVariant)),
           ),
           const SizedBox(height: 24),
@@ -503,17 +503,14 @@ class _InlineApiSettingsState extends State<_InlineApiSettings> {
 
   Future<void> _test() async {
     setState(() { _testResult = null; _saving = true; });
+    // 先保存配置再测试
     await AiApiService.instance.saveSettings(
       apiKey: _apiKeyController.text.trim(),
       baseUrl: _baseUrlController.text.trim(),
       model: _modelController.text.trim(),
     );
     try {
-      final result = await AiApiService.instance.chat(
-        systemPrompt: '你是测试机器人，只需回复"连接成功"四个字。',
-        userMessage: '测试',
-        temperature: 0.1,
-      );
+      final result = await AiApiService.instance.testConnection();
       if (mounted) setState(() { _testResult = '✅ $result'; _testOk = true; _saving = false; });
     } catch (e) {
       if (mounted) setState(() { _testResult = '❌ ${e.toString()}'; _testOk = false; _saving = false; });

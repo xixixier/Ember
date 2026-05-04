@@ -36,6 +36,7 @@ class _ThrowInScreenState extends ConsumerState<ThrowInScreen> {
   final _textController = TextEditingController();
   final _focusNode = FocusNode();
   String? _lastCollectedId;
+  String _lastSubmittedText = ''; // 保存提交的文字，用于销毁动画
 
   @override
   void dispose() {
@@ -203,6 +204,7 @@ class _ThrowInScreenState extends ConsumerState<ThrowInScreen> {
       return;
     }
 
+    _lastSubmittedText = text;
     _textController.clear();
     _focusNode.unfocus();
 
@@ -212,8 +214,12 @@ class _ThrowInScreenState extends ConsumerState<ThrowInScreen> {
     if (!mounted) return;
 
     if (transformType == null) {
-      // 跳过转化，直接显示销毁反馈
-      _showDestroyFeedback(messenger, state);
+      // 跳过转化，直接显示销毁反馈/动画
+      if (state.destroyTime == DestroyTime.now) {
+        _showDestroyAnimation(state);
+      } else {
+        _showDestroyFeedback(messenger, state);
+      }
       return;
     }
 
@@ -320,7 +326,7 @@ class _ThrowInScreenState extends ConsumerState<ThrowInScreen> {
       DestroyCountdownScreen.show(
         context,
         remainingSeconds: 3,
-        content: _textController.text.isEmpty ? '' : _textController.text,
+        content: _lastSubmittedText,
         emotion: state.emotion,
         intensity: state.intensity,
         destroyStyle: state.destroyStyle,

@@ -122,7 +122,16 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               ),
               error: (e, _) => SizedBox(
                 height: 320,
-                child: Center(child: Text('加载失败', style: TextStyle(color: colorScheme.error))),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.cloud_off_outlined, size: 40, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4)),
+                      const SizedBox(height: 8),
+                      Text('数据加载中...', style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 13)),
+                    ],
+                  ),
+                ),
               ),
               ),
             ),
@@ -343,7 +352,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         );
       },
       loading: () => const SizedBox.shrink(),
-      error: (_, _) => const SizedBox.shrink(),
+      error: (_, _) => const Padding(
+        padding: EdgeInsets.symmetric(vertical: 16),
+        child: Center(child: Text('暂无数据', style: TextStyle(fontSize: 13))),
+      ),
     );
   }
 
@@ -393,7 +405,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             height: 160,
             child: Center(child: CircularProgressIndicator()),
           ),
-          error: (_, _) => const SizedBox.shrink(),
+          error: (_, _) => const SizedBox(
+            height: 160,
+            child: Center(child: Text('暂无数据', style: TextStyle(fontSize: 13))),
+          ),
         ),
       ],
     );

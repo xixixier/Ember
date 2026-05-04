@@ -63,12 +63,16 @@ Future<List<WordCloudItem>> _buildWordCloud(
   KeywordDao dao,
   String month,
 ) async {
-  final keywords = await dao.getTopByMonth(month, limit: 50);
-  return keywords.map((kw) {
-    return WordCloudItem(
-      word: kw.word,
-      count: kw.count,
-      emotion: Emotion.fromName(kw.emotionTag),
-    );
-  }).toList();
+  try {
+    final keywords = await dao.getTopByMonth(month, limit: 50);
+    return keywords.map((kw) {
+      return WordCloudItem(
+        word: kw.word,
+        count: kw.count,
+        emotion: Emotion.fromName(kw.emotionTag),
+      );
+    }).toList();
+  } catch (e) {
+    return <WordCloudItem>[];
+  }
 }

@@ -163,28 +163,35 @@ class _DestroyCountdownScreenState extends State<DestroyCountdownScreen>
     final darkRed = ext?.darkRedOrange ?? const Color(0xFFA9472B);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0A),
-      body: Stack(
-        children: [
-          // 背景渐变
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment.center,
-                  radius: 0.8,
-                  colors: [
-                    emberGold.withValues(alpha: 0.04),
-                    Colors.black.withValues(alpha: 0.0),
-                  ],
+      backgroundColor: Colors.black87,
+      body: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop && !_isComplete) {
+            Navigator.of(context).pop(false);
+          }
+        },
+        child: Stack(
+          children: [
+            // 背景渐变
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    center: Alignment.center,
+                    radius: 0.8,
+                    colors: [
+                      emberGold.withValues(alpha: 0.04),
+                      Colors.black.withValues(alpha: 0.0),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
 
-          // 浮动粒子
-          Positioned.fill(
-            child: AnimatedBuilder(
+            // 浮动粒子
+            Positioned.fill(
+              child: AnimatedBuilder(
               animation: _particleController,
               builder: (context, _) {
                 return CustomPaint(
@@ -429,6 +436,7 @@ class _DestroyCountdownScreenState extends State<DestroyCountdownScreen>
           ),
         ],
       ),
+      ), // PopScope
     );
   }
 

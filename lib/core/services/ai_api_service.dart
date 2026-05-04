@@ -61,7 +61,15 @@ class AiApiService {
       throw ApiNotConfiguredException();
     }
 
-    final url = '${baseUrl.trimRight().replaceAll(RegExp(r'/$'), '')}/v1/chat/completions';
+    // 智能拼接 URL：处理中转站各种 base URL 格式
+    // 支持格式：https://api.openai.com / https://xxx.com/v1 / https://xxx.com/v1/
+    var base = baseUrl.trim();
+    if (!base.endsWith('/')) base += '/';
+    // 已含 /v1 的不再重复添加
+    if (!base.endsWith('/v1/')) {
+      base += 'v1/';
+    }
+    final url = '${base}chat/completions';
 
     final response = await http.post(
       Uri.parse(url),
@@ -93,6 +101,50 @@ class AiApiService {
     }
 
     return content.trim();
+  }
+
+  /// 测试连接（10秒超时，简短 prompt）
+  Future<String> testConnection() async {
+    await loadSettings();
+    if (!isConfigured) throw ApiNotConfiguredException();
+
+    var base = baseUrl.trim();
+    if (!base.endsWith('/')) base += '/';
+    if (!base.endsWith('/v1/')) {
+      base += 'v1/';
+    }
+    final url = '${base}chat/completions';
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $apiKey',
+        },
+        body: jsonEncode({
+          'model': model,
+          'messages': [
+            {'role': 'user', 'content': 'Hi'},
+          ],
+          'max_tokens': 10,
+        }),
+      ).timeout(const Duration(seconds: 15));
+
+      if (response.statusCode != 200) {
+        final body = jsonDecode(response.body);
+        final message = (body['error']?['message'] as String?) ??
+            'HTTP ${response.statusCode}';
+        throw ApiException('服务器错误: $message');
+      }
+
+      return '连接成功';
+    } on ApiException {
+      rethrow;
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('网络连接失败，请检查地址是否正确');
+    }
   }
 }
 

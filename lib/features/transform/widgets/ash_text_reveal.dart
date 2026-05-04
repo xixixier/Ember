@@ -94,10 +94,21 @@ class _AshTextRevealState extends State<AshTextReveal>
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        _initParticles(constraints.maxWidth, 200, primary);
+        // 计算文字实际高度
+        final padding = 16.0;
+        final contentWidth = constraints.maxWidth - padding * 2;
+        final tp = TextPainter(
+          text: TextSpan(text: widget.text, style: style),
+          textDirection: TextDirection.ltr,
+        )..layout(maxWidth: contentWidth);
+        final textHeight = tp.height;
+        final totalHeight = textHeight + padding * 2;
+
+        _initParticles(constraints.maxWidth, totalHeight, primary);
 
         return SizedBox(
           width: double.infinity,
+          height: totalHeight,
           child: AnimatedBuilder(
             animation: _controller,
             builder: (context, _) {

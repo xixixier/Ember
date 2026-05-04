@@ -142,18 +142,21 @@ class _TransformResultCardState extends State<TransformResultCard> {
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
         width: double.infinity,
+        constraints: const BoxConstraints(maxHeight: 300),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: colorScheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: AshTextReveal(
-          text: widget.result.content,
-          style: TextStyle(
-            color: colorScheme.onSurface,
-            fontSize: 16,
-            height: 1.8,
-            fontWeight: FontWeight.w400,
+        child: SingleChildScrollView(
+          child: AshTextReveal(
+            text: widget.result.content,
+            style: TextStyle(
+              color: colorScheme.onSurface,
+              fontSize: 16,
+              height: 1.8,
+              fontWeight: FontWeight.w400,
+            ),
           ),
         ),
       ),
