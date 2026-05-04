@@ -1,7 +1,7 @@
 name: ember
 description: "Ember（余烬）— 负面情绪释放工具"
 publish_to: 'none'
-version: 1.2.1+5
+version: 1.2.2+6
 
 environment:
   sdk: ^3.11.4

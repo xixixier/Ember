@@ -216,7 +216,7 @@ class _ThrowInScreenState extends ConsumerState<ThrowInScreen> {
     if (transformType == null) {
       // 跳过转化，直接显示销毁反馈/动画
       if (state.destroyTime == DestroyTime.now) {
-        _showDestroyAnimation(state);
+        await _showDestroyAnimation();
       } else {
         _showDestroyFeedback(messenger, state);
       }
@@ -283,11 +283,11 @@ class _ThrowInScreenState extends ConsumerState<ThrowInScreen> {
               },
             );
             // 收藏后播放销毁动画
-            _showDestroyAnimation(state);
+            _showDestroyAnimation();
           },
           onSkip: () {
             Navigator.of(ctx).pop();
-            _showDestroyAnimation(state);
+            _showDestroyAnimation();
           },
         ),
       ),
@@ -318,12 +318,13 @@ class _ThrowInScreenState extends ConsumerState<ThrowInScreen> {
   }
 
   /// 播放销毁动画
-  void _showDestroyAnimation(ThrowInState state) {
+  Future<void> _showDestroyAnimation() async {
     if (!mounted) return;
+    final state = ref.read(throwInControllerProvider);
 
     if (state.destroyTime == DestroyTime.now) {
       // 立刻销毁：显示全屏倒计时页面（3秒）
-      DestroyCountdownScreen.show(
+      final result = await DestroyCountdownScreen.show(
         context,
         remainingSeconds: 3,
         content: _lastSubmittedText,
@@ -331,6 +332,13 @@ class _ThrowInScreenState extends ConsumerState<ThrowInScreen> {
         intensity: state.intensity,
         destroyStyle: state.destroyStyle,
       );
+
+      // 根据返回值决定是否执行销毁
+      if (result == true) {
+        // 用户确认销毁
+        await ref.read(throwInControllerProvider.notifier).destroyPendingEntry();
+      }
+      // 如果 result == false（用户取消），则不销毁，条目保留
     }
   }
 

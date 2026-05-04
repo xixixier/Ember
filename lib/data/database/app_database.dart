@@ -55,13 +55,13 @@ class EntryDao extends DatabaseAccessor<AppDatabase> with _$EntryDaoMixin {
   Future<Entry?> getById(String id) =>
       (select(entries)..where((t) => t.id.equals(id))).getSingleOrNull();
 
-  /// 监听待毁条目（未销毁 + 销毁时间在未来）
+  /// 监听待毁条目（未销毁）
   /// 用于「待毁」Tab 实时显示
-  Stream<List<Entry>> watchPendingDestroyEntries(int nowSeconds) =>
+  /// 注意：不在 SQL 中过滤 destroyAt，让前端根据当前时间过滤，
+  /// 避免 Timer 每秒触发 setState 导致 stream 重建和 loading 闪烁
+  Stream<List<Entry>> watchPendingDestroyEntries() =>
       (select(entries)
-            ..where((t) =>
-                t.isDestroyed.equals(false) &
-                t.destroyAt.isBiggerThanValue(nowSeconds))
+            ..where((t) => t.isDestroyed.equals(false))
             ..orderBy([(t) => OrderingTerm.asc(t.destroyAt)]))
           .watch();
 

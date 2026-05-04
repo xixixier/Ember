@@ -62,13 +62,22 @@ class AiApiService {
     }
 
     // 智能拼接 URL：处理中转站各种 base URL 格式
-    // 支持格式：https://api.openai.com / https://xxx.com/v1 / https://xxx.com/v1/
+    // 支持格式：
+    // - https://api.openai.com
+    // - https://api.openai.com/
+    // - https://api.openai.com/v1
+    // - https://api.openai.com/v1/
+    // - https://proxy.com/api/v1
+    // - https://proxy.com/api/v1/
     var base = baseUrl.trim();
-    if (!base.endsWith('/')) base += '/';
-    // 已含 /v1 的不再重复添加
-    if (!base.endsWith('/v1/')) {
-      base += 'v1/';
+    // 先移除末尾可能的 /v1 或 /v1/，再统一添加
+    if (base.endsWith('/v1/')) {
+      base = base.substring(0, base.length - 3); // 去掉 /v1/
+    } else if (base.endsWith('/v1')) {
+      base = base.substring(0, base.length - 2); // 去掉 /v1
     }
+    if (!base.endsWith('/')) base += '/';
+    base += 'v1/';
     final url = '${base}chat/completions';
 
     final response = await http.post(
@@ -109,10 +118,14 @@ class AiApiService {
     if (!isConfigured) throw ApiNotConfiguredException();
 
     var base = baseUrl.trim();
-    if (!base.endsWith('/')) base += '/';
-    if (!base.endsWith('/v1/')) {
-      base += 'v1/';
+    // 先移除末尾可能的 /v1 或 /v1/，再统一添加
+    if (base.endsWith('/v1/')) {
+      base = base.substring(0, base.length - 3);
+    } else if (base.endsWith('/v1')) {
+      base = base.substring(0, base.length - 2);
     }
+    if (!base.endsWith('/')) base += '/';
+    base += 'v1/';
     final url = '${base}chat/completions';
 
     try {

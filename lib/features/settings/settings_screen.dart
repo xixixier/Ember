@@ -355,7 +355,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ListTile(
             leading: const Icon(Icons.info_outline),
             title: const Text('版本'),
-            trailing: Text('1.2.1',
+            trailing: Text('1.2.2',
                 style: TextStyle(color: theme.colorScheme.onSurfaceVariant)),
           ),
           const SizedBox(height: 24),

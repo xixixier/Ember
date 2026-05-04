@@ -67,13 +67,15 @@ class _ToDestroyScreenState extends ConsumerState<ToDestroyScreen> {
         ],
       ),
       body: StreamBuilder<List<Entry>>(
-        stream: entryDao.watchPendingDestroyEntries(_nowSeconds),
+        stream: entryDao.watchPendingDestroyEntries(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final items = snapshot.data ?? [];
+          // 前端过滤：只显示还没到期的条目
+          final allItems = snapshot.data ?? [];
+          final items = allItems.where((e) => e.destroyAt > _nowSeconds).toList();
 
           if (items.isEmpty) {
             return const EmberEmptyState(
@@ -268,30 +270,54 @@ class _ToDestroyScreenState extends ConsumerState<ToDestroyScreen> {
     );
 
     if (confirmed == true && mounted) {
-      await dao.destroyNow(entry.id);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('已销毁 ${DestroyStyle.fromName(entry.destroyStyle).emoji}'),
-            duration: const Duration(seconds: 2),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+      try {
+        await dao.destroyNow(entry.id);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('已销毁 ${DestroyStyle.fromName(entry.destroyStyle).emoji}'),
+              duration: const Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('销毁失败：$e'),
+              duration: const Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
       }
     }
   }
 
   /// 取消销毁（暂缓7天）
   Future<void> _cancelDestroy(EntryDao dao, Entry entry) async {
-    await dao.cancelDestroy(entry.id);
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('已暂缓销毁，7天后再次到期'),
-          duration: Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+    try {
+      await dao.cancelDestroy(entry.id);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('已暂缓销毁，7天后再次到期'),
+            duration: Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('操作失败：$e'),
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 

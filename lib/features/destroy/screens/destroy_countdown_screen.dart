@@ -394,12 +394,15 @@ class _DestroyCountdownScreenState extends State<DestroyCountdownScreen>
                       Expanded(
                         child: TextButton(
                           onPressed: () {
-                            // 立即完成
-                            _countdownController.forward(from: 1.0);
+                            // 立即完成：停止动画，直接跳到完成状态
+                            _countdownController.stop();
                             setState(() {
                               _remainingSeconds = 0;
                               _isComplete = true;
                             });
+                            // 设置动画控制器到结束状态（用于build方法中的动画）
+                            _countdownController.value = 1.0;
+                            // 延迟返回，让用户看到完成状态
                             final navigator = Navigator.of(context);
                             Future.delayed(const Duration(milliseconds: 800), () {
                               if (!mounted) return;

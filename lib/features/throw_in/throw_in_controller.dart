@@ -52,6 +52,9 @@ class ThrowInController extends StateNotifier<ThrowInState> {
   final DailyStatsDao _dailyStatsDao;
   final KeywordDao _keywordDao;
 
+  /// 最后提交的条目ID（用于后续销毁操作）
+  String? _lastSubmittedId;
+
   ThrowInController(this._entryDao, this._dailyStatsDao, this._keywordDao)
       : super(const ThrowInState());
 
@@ -87,6 +90,9 @@ class ThrowInController extends StateNotifier<ThrowInState> {
         createdAt: Value(nowSeconds),
       ));
 
+      // 保存条目ID，用于后续可能的销毁操作
+      _lastSubmittedId = id;
+
       // 2. 更新日统计
       final dateStr =
           '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
@@ -105,16 +111,23 @@ class ThrowInController extends StateNotifier<ThrowInState> {
         await _keywordDao.batchIncrement(keywords, state.emotion.name, monthStr);
       }
 
-      // 4. 如果选择"立刻"销毁
-      if (state.destroyTime == DestroyTime.now) {
-        await _entryDao.destroyNow(id);
-      }
+      // 注意：不在这里执行销毁！
+      // "立刻销毁"应该在显示销毁动画后，由 ThrowInScreen 处理
+      // 这样用户有机会取消销毁
 
       return true;
     } catch (e) {
       return false;
     } finally {
       state = state.copyWith(isSubmitting: false);
+    }
+  }
+
+  /// 销毁最后提交的条目（在销毁动画完成后调用）
+  Future<void> destroyPendingEntry() async {
+    if (_lastSubmittedId != null) {
+      await _entryDao.destroyNow(_lastSubmittedId!);
+      _lastSubmittedId = null;
     }
   }
 
