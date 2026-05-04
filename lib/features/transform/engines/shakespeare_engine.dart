@@ -4,10 +4,11 @@ import 'dart:math';
 import 'package:flutter/services.dart';
 
 import 'package:ember/core/constants/emotions.dart';
+import 'package:ember/core/services/ai_api_service.dart';
 import 'transform_engine.dart';
 
 /// 莎翁剧场引擎
-/// 本地词典映射 + 模板填充
+/// 优先使用 AI API；未配置时回退到本地词典模板
 class ShakespeareEngine extends TransformEngine {
   @override
   TransformType get type => TransformType.shakespeare;
@@ -33,29 +34,55 @@ class ShakespeareEngine extends TransformEngine {
     Emotion emotion,
     int intensity,
   ) async {
+    // 尝试 AI 生成
+    final api = AiApiService.instance;
+    await api.loadSettings();
+    if (api.isConfigured) {
+      try {
+        final content = await api.chat(
+          systemPrompt: _buildSystemPrompt(emotion, intensity),
+          userMessage: text,
+        );
+        return TransformResult(type: type, content: content);
+      } catch (_) {
+        // 失败则回退本地
+      }
+    }
+
+    // 本地模板回退
     await _loadTemplates();
-
     final emotionWord = _emotionMap![emotion.name] ?? '哀怨';
-    // 尝试从文本提取对象关键词
     final targetWord = _inferTarget(text) ?? _targetMap!['none']!;
-
-    // 高烈度选更激烈的模板（后面的更激烈）
     final rng = Random();
     final pool = _templates!;
     final offset = intensity > 3 ? pool.length ~/ 2 : 0;
     final template = pool[offset + rng.nextInt(pool.length - offset)];
-
     final result = template
         .replaceAll('{emotion}', emotionWord)
         .replaceAll('{target}', targetWord);
-
-    return TransformResult(
-      type: type,
-      content: result,
-    );
+    return TransformResult(type: type, content: result);
   }
 
-  /// 简单推断目标对象
+  String _buildSystemPrompt(Emotion emotion, int intensity) {
+    final intensityDesc = intensity <= 2
+        ? '低烈度（平静克制）'
+        : intensity <= 3
+            ? '中等烈度（情绪充沛）'
+            : '高烈度（激烈沸腾）';
+
+    return '''你是一位精通莎士比亚风格的创作者，擅长将现代情绪用戏剧性的古典语言重新演绎。
+
+用户正在经历「${emotion.label}」情绪，烈度为 $intensity/5（$intensityDesc）。
+
+请将用户的情绪文字转化为莎翁剧场风格的独白，要求：
+1. 使用"汝"、"吾"等古典人称，融入诗意的隐喻和比喻
+2. 2-4句话，语言华丽但不晦涩
+3. 契合情绪的烈度，烈度高时更激昂，低时更忧郁克制
+4. 只输出转化后的文字，不加解释
+
+示例：「汝之愤怒如烈火焚城，然此城终将在灰烬中重生」''';
+  }
+
   String? _inferTarget(String text) {
     final lower = text.toLowerCase();
     final mapping = <String, List<String>>{
@@ -66,7 +93,6 @@ class ShakespeareEngine extends TransformEngine {
       'stranger': ['陌生人', '路人', '别人', '插队', '撞', '骂'],
       'world': ['世界', '社会', '体制', '命运', '时代', '人生', '活着'],
     };
-
     for (final entry in mapping.entries) {
       for (final keyword in entry.value) {
         if (lower.contains(keyword)) {

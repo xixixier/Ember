@@ -252,32 +252,38 @@ class _ThrowInScreenState extends ConsumerState<ThrowInScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => TransformResultCard(
-        result: result,
-        onCollect: () async {
-          Navigator.of(ctx).pop();
-          await _collectResult(result, state);
-          if (!mounted) return;
-          CollectSnackbar.show(
-            this.context,
-            onUndo: () async {
-              if (_lastCollectedId != null) {
-                final collectionDao = ref.read(collectionDaoProvider);
-                await collectionDao.deleteCollection(_lastCollectedId!);
-                _lastCollectedId = null;
-                if (mounted) {
-                  CollectSnackbar.showUndo(this.context);
+      useSafeArea: true,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(ctx).viewInsets.bottom,
+        ),
+        child: TransformResultCard(
+          result: result,
+          onCollect: () async {
+            Navigator.of(ctx).pop();
+            await _collectResult(result, state);
+            if (!mounted) return;
+            CollectSnackbar.show(
+              this.context,
+              onUndo: () async {
+                if (_lastCollectedId != null) {
+                  final collectionDao = ref.read(collectionDaoProvider);
+                  await collectionDao.deleteCollection(_lastCollectedId!);
+                  _lastCollectedId = null;
+                  if (mounted) {
+                    CollectSnackbar.showUndo(this.context);
+                  }
                 }
-              }
-            },
-          );
-          // 收藏后播放销毁动画
-          _showDestroyAnimation(state);
-        },
-        onSkip: () {
-          Navigator.of(ctx).pop();
-          _showDestroyAnimation(state);
-        },
+              },
+            );
+            // 收藏后播放销毁动画
+            _showDestroyAnimation(state);
+          },
+          onSkip: () {
+            Navigator.of(ctx).pop();
+            _showDestroyAnimation(state);
+          },
+        ),
       ),
     );
   }

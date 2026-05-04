@@ -62,6 +62,19 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
+                
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text('😵', style: TextStyle(fontSize: 36)),
+                        const SizedBox(height: 12),
+                        Text('加载失败，请重启应用', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                      ],
+                    ),
+                  );
+                }
 
                 final items = snapshot.data ?? [];
 

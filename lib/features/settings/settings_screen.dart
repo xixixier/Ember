@@ -3,11 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/pin_service.dart';
-import '../../core/services/shake_detector.dart';
-import '../../core/widgets/fake_calculator.dart';
 import '../../core/theme/theme_provider.dart';
 import '../../data/services/export_service.dart';
 import '../../core/providers/database_provider.dart';
+import '../../core/services/ai_api_service.dart';
 
 /// 设置页面（Tab4: 我的）
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -20,9 +19,9 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _lockEnabled = false;
   bool _biometricEnabled = false;
-  bool _camouflageEnabled = false;
   bool _biometricAvailable = false;
   bool _loading = true;
+  bool _apiConfigured = false;
 
   @override
   void initState() {
@@ -34,13 +33,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final lockEnabled = await PinService.instance.isLockEnabled();
     final bioEnabled = await PinService.instance.isBiometricEnabled();
     final bioAvailable = await AuthService.instance.canAuthenticate();
-    // 伪装是否启用（用 SharedPreferences 存储状态）
-    // 简化处理：默认 false，用户手动开关
+    await AiApiService.instance.loadSettings();
     if (!mounted) return;
     setState(() {
       _lockEnabled = lockEnabled;
       _biometricEnabled = bioEnabled;
       _biometricAvailable = bioAvailable;
+      _apiConfigured = AiApiService.instance.isConfigured;
       _loading = false;
     });
   }
@@ -85,26 +84,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     } else {
       await PinService.instance.setBiometricEnabled(false);
       setState(() => _biometricEnabled = false);
-    }
-  }
-
-  // ─── 紧急伪装 ────────────────────────────────────────────────────────────
-
-  Future<void> _toggleCamouflage(bool value) async {
-    setState(() => _camouflageEnabled = value);
-    if (value) {
-      ShakeDetector.start(() {
-        if (mounted) {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => const FakeCalculator(),
-              fullscreenDialog: true,
-            ),
-          );
-        }
-      });
-    } else {
-      ShakeDetector.stop();
     }
   }
 
@@ -259,6 +238,51 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 8),
         children: [
+          // ─── AI 转化 ───────────────────────────────────────────────────
+          _SectionHeader(title: 'AI 转化引擎', icon: Icons.auto_awesome_outlined),
+          ListTile(
+            leading: const Icon(Icons.api_outlined),
+            title: const Text('API 配置'),
+            subtitle: Text(_apiConfigured ? '已配置，AI 转化已启用' : '未配置，使用本地模板'),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (_apiConfigured)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Text(
+                      'ON',
+                      style: TextStyle(
+                        color: Colors.green,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                const SizedBox(width: 4),
+                const Icon(Icons.chevron_right),
+              ],
+            ),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => const _ApiSettingsPage(),
+              ),
+            ).then((_) {
+              // 返回后刷新配置状态
+              AiApiService.instance.loadSettings().then((_) {
+                if (mounted) {
+                  setState(() => _apiConfigured = AiApiService.instance.isConfigured);
+                }
+              });
+            }),
+          ),
+
+          const Divider(indent: 16, endIndent: 16, height: 24),
+
           // ─── 安全 ──────────────────────────────────────────────────────
           _SectionHeader(title: '安全', icon: Icons.shield_outlined),
           SwitchListTile(
@@ -282,13 +306,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               title: const Text('修改密码'),
               onTap: _changePin,
             ),
-          SwitchListTile(
-            secondary: const Icon(Icons.vibration_outlined),
-            title: const Text('紧急伪装'),
-            subtitle: const Text('摇一摇切换为计算器'),
-            value: _camouflageEnabled,
-            onChanged: _toggleCamouflage,
-          ),
 
           const Divider(indent: 16, endIndent: 16, height: 24),
 
@@ -338,7 +355,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ListTile(
             leading: const Icon(Icons.info_outline),
             title: const Text('版本'),
-            trailing: Text('0.1.0',
+            trailing: Text('1.2.0',
                 style: TextStyle(color: theme.colorScheme.onSurfaceVariant)),
           ),
           const SizedBox(height: 24),
@@ -395,4 +412,329 @@ class _SectionHeader extends StatelessWidget {
       ),
     );
   }
+}
+
+/// API 设置页面入口（独立 import 避免循环）
+class _ApiSettingsPage extends StatelessWidget {
+  const _ApiSettingsPage();
+
+  @override
+  Widget build(BuildContext context) {
+    // 延迟 import 避免循环引用，直接实例化
+    return const _ApiSettingsRouteWrapper();
+  }
+}
+
+class _ApiSettingsRouteWrapper extends StatelessWidget {
+  const _ApiSettingsRouteWrapper();
+
+  @override
+  Widget build(BuildContext context) {
+    // 直接引入独立页面
+    return const _InlineApiSettings();
+  }
+}
+
+// 内嵌一个精简的 API 设置页面（避免 import 独立文件时的可能问题）
+class _InlineApiSettings extends StatefulWidget {
+  const _InlineApiSettings();
+
+  @override
+  State<_InlineApiSettings> createState() => _InlineApiSettingsState();
+}
+
+class _InlineApiSettingsState extends State<_InlineApiSettings> {
+  final _apiKeyController = TextEditingController();
+  final _baseUrlController = TextEditingController();
+  final _modelController = TextEditingController();
+  bool _obscureKey = true;
+  bool _loading = true;
+  bool _saving = false;
+  String? _testResult;
+  bool _testOk = false;
+
+  static const _presets = <_Preset>[
+    _Preset(name: 'OpenAI', url: 'https://api.openai.com', model: 'gpt-3.5-turbo', icon: '🤖'),
+    _Preset(name: 'DeepSeek', url: 'https://api.deepseek.com', model: 'deepseek-chat', icon: '🌊'),
+    _Preset(name: '通义千问', url: 'https://dashscope.aliyuncs.com/compatible-mode', model: 'qwen-turbo', icon: '🌐'),
+    _Preset(name: 'Ollama', url: 'http://localhost:11434', model: 'llama3', icon: '🦙'),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    await AiApiService.instance.loadSettings();
+    if (mounted) {
+      setState(() {
+        _apiKeyController.text = AiApiService.instance.apiKey;
+        _baseUrlController.text = AiApiService.instance.baseUrl;
+        _modelController.text = AiApiService.instance.model;
+        _loading = false;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _apiKeyController.dispose();
+    _baseUrlController.dispose();
+    _modelController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    setState(() => _saving = true);
+    await AiApiService.instance.saveSettings(
+      apiKey: _apiKeyController.text.trim(),
+      baseUrl: _baseUrlController.text.trim(),
+      model: _modelController.text.trim(),
+    );
+    if (mounted) {
+      setState(() => _saving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('✅ 已保存'), duration: Duration(seconds: 2), behavior: SnackBarBehavior.floating),
+      );
+    }
+  }
+
+  Future<void> _test() async {
+    setState(() { _testResult = null; _saving = true; });
+    await AiApiService.instance.saveSettings(
+      apiKey: _apiKeyController.text.trim(),
+      baseUrl: _baseUrlController.text.trim(),
+      model: _modelController.text.trim(),
+    );
+    try {
+      final result = await AiApiService.instance.chat(
+        systemPrompt: '你是测试机器人，只需回复"连接成功"四个字。',
+        userMessage: '测试',
+        temperature: 0.1,
+      );
+      if (mounted) setState(() { _testResult = '✅ $result'; _testOk = true; _saving = false; });
+    } catch (e) {
+      if (mounted) setState(() { _testResult = '❌ ${e.toString()}'; _testOk = false; _saving = false; });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    if (_loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('AI 转化引擎', style: TextStyle(color: colorScheme.primary, fontWeight: FontWeight.w600, fontSize: 18)),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        children: [
+          // 顶部说明
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: colorScheme.primary.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: colorScheme.primary.withValues(alpha: 0.15)),
+            ),
+            child: Row(
+              children: [
+                const Text('✨', style: TextStyle(fontSize: 24)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('接入真实 AI，让转化更懂你',
+                          style: TextStyle(color: colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 4),
+                      Text('配置后，莎翁剧场、俳句、反向鸡汤将用 AI 生成\n未配置时使用本地内置模板',
+                          style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 12, height: 1.5)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // 快捷预设
+          Text('快捷预设', style: TextStyle(color: colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 52,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: _presets.length,
+              separatorBuilder: (context, _) => const SizedBox(width: 8),
+              itemBuilder: (context, i) {
+                final p = _presets[i];
+                final selected = _baseUrlController.text.contains(p.url.replaceAll('https://', '').replaceAll('http://', '').split('/').first);
+                return GestureDetector(
+                  onTap: () => setState(() {
+                    _baseUrlController.text = p.url;
+                    _modelController.text = p.model;
+                    _testResult = null;
+                  }),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: selected ? colorScheme.primary.withValues(alpha: 0.12) : colorScheme.surfaceContainerHigh,
+                      borderRadius: BorderRadius.circular(26),
+                      border: Border.all(
+                        color: selected ? colorScheme.primary : colorScheme.outline.withValues(alpha: 0.2),
+                        width: selected ? 1.5 : 0.5,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(p.icon, style: const TextStyle(fontSize: 16)),
+                        const SizedBox(width: 6),
+                        Text(p.name, style: TextStyle(
+                          color: selected ? colorScheme.primary : colorScheme.onSurface,
+                          fontSize: 13,
+                          fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                        )),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // API Key
+          _buildLabel('API Key', colorScheme),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _apiKeyController,
+            obscureText: _obscureKey,
+            decoration: _inputDec('sk-...', colorScheme, suffix: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: Icon(_obscureKey ? Icons.visibility_off_outlined : Icons.visibility_outlined, size: 18, color: colorScheme.onSurfaceVariant),
+                  onPressed: () => setState(() => _obscureKey = !_obscureKey),
+                ),
+              ],
+            )),
+          ),
+          const SizedBox(height: 14),
+
+          // Base URL
+          _buildLabel('API 地址（Base URL）', colorScheme),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _baseUrlController,
+            keyboardType: TextInputType.url,
+            decoration: _inputDec('https://api.openai.com', colorScheme),
+          ),
+          const SizedBox(height: 14),
+
+          // 模型
+          _buildLabel('模型名称', colorScheme),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _modelController,
+            decoration: _inputDec('gpt-3.5-turbo', colorScheme),
+          ),
+          const SizedBox(height: 24),
+
+          // 测试结果
+          if (_testResult != null) ...[
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              padding: const EdgeInsets.all(14),
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: (_testOk ? Colors.green : colorScheme.error).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: (_testOk ? Colors.green : colorScheme.error).withValues(alpha: 0.3)),
+              ),
+              child: Text(_testResult!, style: TextStyle(color: _testOk ? Colors.green : colorScheme.error, fontSize: 13)),
+            ),
+          ],
+
+          // 按钮
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _saving ? null : _test,
+                  icon: _saving
+                      ? SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: colorScheme.primary))
+                      : const Icon(Icons.wifi_outlined, size: 16),
+                  label: const Text('测试连接'),
+                  style: OutlinedButton.styleFrom(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                flex: 2,
+                child: FilledButton.icon(
+                  onPressed: _saving ? null : _save,
+                  icon: const Icon(Icons.save_outlined, size: 16),
+                  label: const Text('保存'),
+                  style: FilledButton.styleFrom(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+
+          // 隐私说明
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              '🔒 隐私说明\n\n'
+              '• API Key 仅存储在本设备\n'
+              '• 转化时会向你配置的地址发送情绪文本\n'
+              '• 建议使用低权限的专用 API Key\n'
+              '• 未配置时使用本地模板，完全离线',
+              style: TextStyle(color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8), fontSize: 12, height: 1.65),
+            ),
+          ),
+          const SizedBox(height: 32),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLabel(String text, ColorScheme cs) => Text(text,
+      style: TextStyle(color: cs.onSurface, fontSize: 14, fontWeight: FontWeight.w600));
+
+  InputDecoration _inputDec(String hint, ColorScheme cs, {Widget? suffix}) => InputDecoration(
+    hintText: hint,
+    hintStyle: TextStyle(color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
+    filled: true,
+    fillColor: cs.surfaceContainerHigh,
+    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: cs.primary, width: 1.5)),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    suffixIcon: suffix,
+  );
+}
+
+class _Preset {
+  final String name;
+  final String url;
+  final String model;
+  final String icon;
+  const _Preset({required this.name, required this.url, required this.model, required this.icon});
 }

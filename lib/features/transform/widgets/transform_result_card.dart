@@ -31,17 +31,27 @@ class _TransformResultCardState extends State<TransformResultCard> {
     final result = widget.result;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      margin: EdgeInsets.zero,
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         border: Border.all(
-          color: colorScheme.outline.withValues(alpha: 0.2),
+          color: colorScheme.outline.withValues(alpha: 0.12),
         ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // 拖拽条
+          Container(
+            width: 36,
+            height: 4,
+            margin: const EdgeInsets.only(top: 12, bottom: 4),
+            decoration: BoxDecoration(
+              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.25),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
           // 类型标签
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
@@ -79,7 +89,12 @@ class _TransformResultCardState extends State<TransformResultCard> {
 
           // 操作按钮
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            padding: EdgeInsets.fromLTRB(
+              16,
+              0,
+              16,
+              16 + MediaQuery.of(context).padding.bottom,
+            ),
             child: Row(
               children: [
                 Expanded(

@@ -1,7 +1,7 @@
 name: ember
 description: "Ember（余烬）— 负面情绪释放工具"
 publish_to: 'none'
-version: 0.1.0+1
+version: 1.2.0+4
 
 environment:
   sdk: ^3.11.4
@@ -33,6 +33,7 @@ dependencies:
   path: ^1.9.0
   timezone: ^0.9.4
   flutter_launcher_icons: ^0.14.4
+  http: ^1.2.0
 
 dev_dependencies:
   flutter_test:
