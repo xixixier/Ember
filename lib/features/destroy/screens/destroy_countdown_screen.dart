@@ -52,16 +52,21 @@ class DestroyCountdownScreen extends StatefulWidget {
           destroyStyle: destroyStyle,
         ),
         transitionsBuilder: (context, animation, secondary, child) {
+          final curved = CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+            reverseCurve: Curves.easeInCubic,
+          );
           return FadeTransition(
-            opacity: CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeIn,
+            opacity: curved,
+            child: ScaleTransition(
+              scale: Tween<double>(begin: 0.985, end: 1.0).animate(curved),
+              child: child,
             ),
-            child: child,
           );
         },
-        transitionDuration: const Duration(milliseconds: 600),
-        reverseTransitionDuration: const Duration(milliseconds: 400),
+        transitionDuration: const Duration(milliseconds: 780),
+        reverseTransitionDuration: const Duration(milliseconds: 520),
       ),
     );
   }
@@ -95,12 +100,15 @@ class _DestroyCountdownScreenState extends State<DestroyCountdownScreen>
     );
 
     _scaleAnim = Tween<double>(begin: 1.0, end: 0.8).animate(
-      CurvedAnimation(parent: _countdownController, curve: Curves.easeIn),
+      CurvedAnimation(
+        parent: _countdownController,
+        curve: Curves.easeInOutCubic,
+      ),
     );
     _fadeAnim = Tween<double>(begin: 1.0, end: 0.0).animate(
       CurvedAnimation(
         parent: _countdownController,
-        curve: const Interval(0.0, 0.8, curve: Curves.easeIn),
+        curve: const Interval(0.0, 0.9, curve: Curves.easeInOut),
       ),
     );
 
@@ -113,7 +121,8 @@ class _DestroyCountdownScreenState extends State<DestroyCountdownScreen>
 
     // 每秒更新倒计时
     _countdownController.addListener(() {
-      final newRemaining = (widget.remainingSeconds * (1.0 - _countdownController.value)).ceil();
+      final newRemaining =
+          (widget.remainingSeconds * (1.0 - _countdownController.value)).ceil();
       if (newRemaining != _remainingSeconds && newRemaining >= 0) {
         setState(() => _remainingSeconds = newRemaining);
       }
@@ -124,7 +133,7 @@ class _DestroyCountdownScreenState extends State<DestroyCountdownScreen>
     // 粒子控制器
     _particleController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 4),
+      duration: const Duration(seconds: 11),
     )..repeat();
 
     // 初始化粒子
@@ -132,17 +141,20 @@ class _DestroyCountdownScreenState extends State<DestroyCountdownScreen>
   }
 
   void _initParticles() {
-    final rng = Random();
-    for (int i = 0; i < 30; i++) {
-      _particles.add(_Particle(
-        x: rng.nextDouble(),
-        y: rng.nextDouble(),
-        size: 1.5 + rng.nextDouble() * 3,
-        speed: 0.002 + rng.nextDouble() * 0.005,
-        drift: (rng.nextDouble() - 0.5) * 0.003,
-        opacity: 0.2 + rng.nextDouble() * 0.5,
-        phase: rng.nextDouble() * 2 * pi,
-      ));
+    final rng = Random(108);
+    for (int i = 0; i < 46; i++) {
+      _particles.add(
+        _Particle(
+          x: rng.nextDouble(),
+          y: rng.nextDouble(),
+          size: 0.8 + rng.nextDouble() * 2.7,
+          speed: 0.0008 + rng.nextDouble() * 0.0026,
+          drift: (rng.nextDouble() - 0.5) * 0.0018,
+          opacity: 0.08 + rng.nextDouble() * 0.34,
+          phase: rng.nextDouble() * 2 * pi,
+          depth: 0.45 + rng.nextDouble() * 0.9,
+        ),
+      );
     }
   }
 
@@ -159,6 +171,7 @@ class _DestroyCountdownScreenState extends State<DestroyCountdownScreen>
     final emberGold = ext?.emberGold ?? const Color(0xFFF2B56B);
     final fireOrange = ext?.fireOrange ?? const Color(0xFFFF8A4C);
     final darkRed = ext?.darkRedOrange ?? const Color(0xFFA9472B);
+    const deepHearth = Color(0xFF1B110D);
 
     return PopScope(
       canPop: false,
@@ -168,7 +181,7 @@ class _DestroyCountdownScreenState extends State<DestroyCountdownScreen>
         }
       },
       child: Scaffold(
-        backgroundColor: Colors.black87,
+        backgroundColor: deepHearth,
         body: Stack(
           children: [
             // 背景渐变
@@ -176,11 +189,29 @@ class _DestroyCountdownScreenState extends State<DestroyCountdownScreen>
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: RadialGradient(
-                    center: Alignment.center,
-                    radius: 0.8,
+                    center: const Alignment(0.05, -0.22),
+                    radius: 1.05,
                     colors: [
-                      emberGold.withValues(alpha: 0.04),
-                      Colors.black.withValues(alpha: 0.0),
+                      fireOrange.withValues(alpha: 0.12),
+                      darkRed.withValues(alpha: 0.05),
+                      deepHearth,
+                    ],
+                    stops: const [0.0, 0.42, 1.0],
+                  ),
+                ),
+              ),
+            ),
+
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withValues(alpha: 0.22),
+                      Colors.transparent,
+                      Colors.black.withValues(alpha: 0.34),
                     ],
                   ),
                 ),
@@ -207,22 +238,29 @@ class _DestroyCountdownScreenState extends State<DestroyCountdownScreen>
             // 主内容和动画切换
             SafeArea(
               child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 800),
-                switchInCurve: Curves.easeOut,
-                switchOutCurve: Curves.easeIn,
+                duration: const Duration(milliseconds: 980),
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInCubic,
                 child: _isComplete
                     ? Center(
                         key: const ValueKey('destroy_anim'),
                         child: DestroyAnimationFactory.create(
                           style: widget.destroyStyle,
                           intensity: widget.intensity,
-                          textHint: widget.content.isEmpty ? '化为余烬' : widget.content,
+                          textHint: widget.content.isEmpty
+                              ? '化为余烬'
+                              : widget.content,
                           onComplete: () {
                             if (mounted) Navigator.of(context).pop(true);
                           },
                         ),
                       )
-                    : _buildCountdownContent(context, emberGold, fireOrange, darkRed),
+                    : _buildCountdownContent(
+                        context,
+                        emberGold,
+                        fireOrange,
+                        darkRed,
+                      ),
               ),
             ),
           ],
@@ -231,7 +269,12 @@ class _DestroyCountdownScreenState extends State<DestroyCountdownScreen>
     );
   }
 
-  Widget _buildCountdownContent(BuildContext context, Color emberGold, Color fireOrange, Color darkRed) {
+  Widget _buildCountdownContent(
+    BuildContext context,
+    Color emberGold,
+    Color fireOrange,
+    Color darkRed,
+  ) {
     return Column(
       key: const ValueKey('countdown'),
       children: [
@@ -257,200 +300,202 @@ class _DestroyCountdownScreenState extends State<DestroyCountdownScreen>
                     curve: Curves.easeOutBack,
                     builder: (context, scale, child) {
                       return Transform.scale(
-                                scale: scale,
-                                child: Opacity(
-                                  opacity: _isComplete ? 1.0 : 0.0,
-                                  child: Text(
-                                    widget.destroyStyle.emoji,
-                                    style: const TextStyle(fontSize: 80),
-                                  ),
-                                ),
-                              );
-                            },
-                          );
-                        }
-
-                        return Transform.scale(
-                          scale: _scaleAnim.value,
-                          child: Opacity(
-                            opacity: _fadeAnim.value,
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                // 大号数字
-                                ShaderMask(
-                                  shaderCallback: (bounds) {
-                                    return LinearGradient(
-                                      begin: Alignment.topCenter,
-                                      end: Alignment.bottomCenter,
-                                      colors: [fireOrange, darkRed],
-                                    ).createShader(bounds);
-                                  },
-                                  child: Text(
-                                    _formatTime(_remainingSeconds),
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 88,
-                                      fontWeight: FontWeight.w200,
-                                      letterSpacing: -4,
-                                      height: 1.0,
-                                      fontFeatures: [FontFeature.tabularFigures()],
-                                    ),
-                                  ),
-                                ),
-
-                                const SizedBox(height: 12),
-
-                                // 秒数（小字）
-                                Text(
-                                  _remainingSeconds > 0
-                                      ? '$_remainingSeconds 秒'
-                                      : '完成',
-                                  style: TextStyle(
-                                    color: emberGold.withValues(alpha: 0.6),
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w400,
-                                    letterSpacing: 2,
-                                  ),
-                                ),
-                              ],
-                            ),
+                        scale: scale,
+                        child: Opacity(
+                          opacity: _isComplete ? 1.0 : 0.0,
+                          child: Text(
+                            widget.destroyStyle.emoji,
+                            style: const TextStyle(fontSize: 80),
                           ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-
-                // 内容预览
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.03),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: emberGold.withValues(alpha: 0.10),
-                        width: 0.5,
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.content.isEmpty
-                              ? '(匿名情绪)'
-                              : widget.content,
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.6),
-                            fontSize: 15,
-                            height: 1.6,
-                          ),
-                          maxLines: 4,
-                          overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 10),
-                        Row(
-                          children: [
-                            Text(
-                              '${widget.emotion.emoji} ${widget.emotion.label}',
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.4),
-                                fontSize: 12,
-                              ),
+                      );
+                    },
+                  );
+                }
+
+                return Transform.scale(
+                  scale: _scaleAnim.value,
+                  child: Opacity(
+                    opacity: _fadeAnim.value,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // 大号数字
+                        ShaderMask(
+                          shaderCallback: (bounds) {
+                            return LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [fireOrange, darkRed],
+                            ).createShader(bounds);
+                          },
+                          child: Text(
+                            _formatTime(_remainingSeconds),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 88,
+                              fontWeight: FontWeight.w200,
+                              letterSpacing: -4,
+                              height: 1.0,
+                              fontFeatures: [FontFeature.tabularFigures()],
                             ),
-                            const SizedBox(width: 12),
-                            Text(
-                              '烈度 ${"🔥" * widget.intensity}',
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.4),
-                                fontSize: 12,
-                              ),
-                            ),
-                            const Spacer(),
-                            Text(
-                              '以${widget.destroyStyle.label}销毁',
-                              style: TextStyle(
-                                color: fireOrange.withValues(alpha: 0.5),
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        // 秒数（小字）
+                        Text(
+                          _remainingSeconds > 0 ? '$_remainingSeconds 秒' : '完成',
+                          style: TextStyle(
+                            color: emberGold.withValues(alpha: 0.6),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                            letterSpacing: 2,
+                          ),
                         ),
                       ],
                     ),
                   ),
+                );
+              },
+            ),
+          ),
+        ),
+
+        // 内容预览
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: const Color(0xFF121214).withValues(alpha: 0.58),
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.10),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: fireOrange.withValues(alpha: 0.045),
+                  blurRadius: 34,
+                  spreadRadius: 0,
                 ),
-
-                const SizedBox(height: 24),
-
-                // 底部操作
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Row(
-                    children: [
-                      // 取消按钮
-                      Expanded(
-                        child: TextButton(
-                          onPressed: () => Navigator.of(context).pop(false),
-                          style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              side: BorderSide(
-                                color: Colors.white.withValues(alpha: 0.10),
-                              ),
-                            ),
-                          ),
-                          child: Text(
-                            '取消',
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.5),
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.content.isEmpty ? '(匿名情绪)' : widget.content,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.68),
+                    fontSize: 15,
+                    height: 1.6,
+                  ),
+                  maxLines: 4,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Text(
+                      '${widget.emotion.emoji} ${widget.emotion.label}',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.4),
+                        fontSize: 12,
                       ),
-                      const SizedBox(width: 12),
-                      // 立即销毁按钮
-                      Expanded(
-                        child: TextButton(
-                          onPressed: () {
-                            // 立即完成：停止倒计时，触发全屏销毁动画
-                            _countdownController.stop();
-                            setState(() {
-                              _remainingSeconds = 0;
-                              _isComplete = true;
-                            });
-                          },
-                          style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            backgroundColor: fireOrange.withValues(alpha: 0.15),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              side: BorderSide(
-                                color: fireOrange.withValues(alpha: 0.30),
-                              ),
-                            ),
-                          ),
-                          child: Text(
-                            '立即销毁',
-                            style: TextStyle(
-                              color: fireOrange,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      '烈度 ${"🔥" * widget.intensity}',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.4),
+                        fontSize: 12,
                       ),
-                    ],
+                    ),
+                    const Spacer(),
+                    Text(
+                      '以${widget.destroyStyle.label}销毁',
+                      style: TextStyle(
+                        color: fireOrange.withValues(alpha: 0.5),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 24),
+
+        // 底部操作
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Row(
+            children: [
+              // 取消按钮
+              Expanded(
+                child: TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(999),
+                      side: BorderSide(
+                        color: Colors.white.withValues(alpha: 0.10),
+                      ),
+                    ),
+                  ),
+                  child: Text(
+                    '取消',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.5),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
-
-              ],
+              ),
+              const SizedBox(width: 12),
+              // 立即销毁按钮
+              Expanded(
+                child: TextButton(
+                  onPressed: () {
+                    // 立即完成：停止倒计时，触发全屏销毁动画
+                    _countdownController.stop();
+                    setState(() {
+                      _remainingSeconds = 0;
+                      _isComplete = true;
+                    });
+                  },
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    backgroundColor: fireOrange.withValues(alpha: 0.15),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(999),
+                      side: BorderSide(
+                        color: fireOrange.withValues(alpha: 0.30),
+                      ),
+                    ),
+                  ),
+                  child: Text(
+                    '立即销毁',
+                    style: TextStyle(
+                      color: fireOrange,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -504,6 +549,7 @@ class _Particle {
   final double drift;
   final double opacity;
   final double phase;
+  final double depth;
 
   const _Particle({
     required this.x,
@@ -513,6 +559,7 @@ class _Particle {
     required this.drift,
     required this.opacity,
     required this.phase,
+    required this.depth,
   });
 }
 
@@ -533,7 +580,11 @@ class _ParticlePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     for (final p in particles) {
-      final x = (p.x + sin(progress * 2 * pi + p.phase) * 0.05 + p.drift * progress * 100) % 1.0;
+      final x =
+          (p.x +
+              sin(progress * 2 * pi + p.phase) * 0.035 +
+              p.drift * progress * 100) %
+          1.0;
       final y = (p.y - p.speed * progress * 100) % 1.0;
       final actualY = y < 0 ? y + 1.0 : y;
 
@@ -541,27 +592,31 @@ class _ParticlePainter extends CustomPainter {
       final py = actualY * size.height;
 
       // 闪烁效果
-      final flicker = 0.5 + 0.5 * sin(progress * 3 * pi + p.phase);
-      final alpha = p.opacity * flicker;
+      final flicker = 0.72 + 0.28 * sin(progress * 2.4 * pi + p.phase);
+      final alpha = p.opacity * flicker * p.depth;
 
       // 颜色插值（emberGold → fireOrange）
       final color = Color.lerp(emberGold, fireOrange, flicker)!;
 
       canvas.drawCircle(
         Offset(px, py),
-        p.size * (0.8 + flicker * 0.4),
-        Paint()..color = color.withValues(alpha: alpha * 0.6),
+        p.size * p.depth * (0.75 + flicker * 0.35),
+        Paint()..color = color.withValues(alpha: alpha * 0.42),
       );
 
       // 光晕
       canvas.drawCircle(
         Offset(px, py),
-        p.size * 2.5,
-        Paint()..color = color.withValues(alpha: alpha * 0.08),
+        p.size * p.depth * 4.2,
+        Paint()..color = color.withValues(alpha: alpha * 0.055),
       );
     }
   }
 
   @override
-  bool shouldRepaint(covariant _ParticlePainter oldDelegate) => true;
+  bool shouldRepaint(covariant _ParticlePainter oldDelegate) =>
+      oldDelegate.progress != progress ||
+      oldDelegate.emberGold != emberGold ||
+      oldDelegate.fireOrange != fireOrange ||
+      oldDelegate.particles != particles;
 }

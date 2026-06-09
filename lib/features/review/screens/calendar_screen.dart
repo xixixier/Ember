@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:ember/core/constants/emotions.dart';
 import 'package:ember/core/theme/ember_theme_extension.dart';
+import 'package:ember/data/database/app_database.dart';
 import 'package:ember/features/review/providers/calendar_provider.dart';
 import 'package:ember/features/review/providers/wordcloud_provider.dart';
 import 'package:ember/features/review/widgets/heat_map_calendar.dart';
@@ -31,10 +32,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
     // 解析当前月份
     final parts = selectedMonth.split('-');
-    final monthDateTime = DateTime(
-      int.parse(parts[0]),
-      int.parse(parts[1]),
-    );
+    final monthDateTime = DateTime(int.parse(parts[0]), int.parse(parts[1]));
 
     return Scaffold(
       appBar: AppBar(
@@ -85,54 +83,68 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               switchOutCurve: Curves.easeOut,
               child: monthAsync.when(
                 data: (stats) {
-                final dayDataMap = buildDayDataMap(stats);
-                final ext = Theme.of(context).extension<EmberThemeExtension>()!;
-                final calendarSize = Size(
-                  MediaQuery.of(context).size.width - 32,
-                  320,
-                );
-                return GestureDetector(
-                  key: ValueKey(selectedMonth),
-                  onTapUp: (details) {
-                    _onCalendarTap(
-                      details,
-                      monthDateTime,
-                      dayDataMap,
-                      context,
-                    );
-                  },
-                  child: SizedBox(
-                    height: 320,
-                    child: AnimatedHeatMapCalendar(
-                      month: monthDateTime,
-                      dayDataMap: dayDataMap,
-                      selectedDate: _selectedDate,
-                      headerColor: ext.heatMapHeader,
-                      dayTextColor: ext.heatMapDayText,
-                      emptyColor: ext.heatMapEmpty,
-                      selectedBorderColor: ext.heatMapSelectedBorder,
-                      size: calendarSize,
+                  final dayDataMap = buildDayDataMap(stats);
+                  final ext = Theme.of(
+                    context,
+                  ).extension<EmberThemeExtension>()!;
+                  final calendarSize = Size(
+                    MediaQuery.of(context).size.width - 32,
+                    320,
+                  );
+                  return GestureDetector(
+                    key: ValueKey(selectedMonth),
+                    onTapUp: (details) {
+                      _onCalendarTap(
+                        details,
+                        monthDateTime,
+                        dayDataMap,
+                        context,
+                      );
+                    },
+                    child: SizedBox(
+                      height: 320,
+                      child: AnimatedHeatMapCalendar(
+                        month: monthDateTime,
+                        dayDataMap: dayDataMap,
+                        selectedDate: _selectedDate,
+                        headerColor: ext.heatMapHeader,
+                        dayTextColor: ext.heatMapDayText,
+                        emptyColor: ext.heatMapEmpty,
+                        selectedBorderColor: ext.heatMapSelectedBorder,
+                        size: calendarSize,
+                      ),
+                    ),
+                  );
+                },
+                loading: () => const SizedBox(
+                  height: 320,
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+                error: (e, _) => SizedBox(
+                  height: 320,
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.cloud_off_outlined,
+                          size: 40,
+                          color: colorScheme.onSurfaceVariant.withValues(
+                            alpha: 0.4,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '数据加载中...',
+                          style: TextStyle(
+                            color: colorScheme.onSurfaceVariant,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                );
-              },
-              loading: () => const SizedBox(
-                height: 320,
-                child: Center(child: CircularProgressIndicator()),
-              ),
-              error: (e, _) => SizedBox(
-                height: 320,
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.cloud_off_outlined, size: 40, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4)),
-                      const SizedBox(height: 8),
-                      Text('数据加载中...', style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 13)),
-                    ],
-                  ),
                 ),
-              ),
               ),
             ),
             const SizedBox(height: 20),
@@ -281,7 +293,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
   /// 本月概览卡片
   Widget _buildMonthSummary(
-    AsyncValue monthAsync,
+    AsyncValue<List<DailyStat>> monthAsync,
     ColorScheme colorScheme,
   ) {
     return monthAsync.when(
@@ -297,8 +309,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           );
         }
 
-        final totalCount = stats.fold<int>(0, (sum, s) => sum + (s.totalCount as int));
-        final intensitySum = stats.fold<int>(0, (sum, s) => sum + (s.intensitySum as int));
+        final totalCount = stats.fold<int>(0, (sum, s) => sum + s.totalCount);
+        final intensitySum = stats.fold<int>(
+          0,
+          (sum, s) => sum + s.intensitySum,
+        );
         final avgIntensity = totalCount > 0
             ? (intensitySum / totalCount).toStringAsFixed(1)
             : '0';
@@ -307,10 +322,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         final emotionCounts = <String, int>{};
         for (final s in stats) {
           final e = s.topEmotion ?? 'custom';
-          emotionCounts[e] = (emotionCounts[e] ?? 0) + (s.totalCount as int);
+          emotionCounts[e] = (emotionCounts[e] ?? 0) + s.totalCount;
         }
-        final topEmotion = emotionCounts.entries
-            .reduce((a, b) => a.value > b.value ? a : b);
+        final topEmotion = emotionCounts.entries.reduce(
+          (a, b) => a.value > b.value ? a : b,
+        );
         final topE = Emotion.fromName(topEmotion.key);
 
         return Container(
@@ -338,8 +354,16 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _SummaryItem(label: '投放', value: '$totalCount 次', color: colorScheme.primary),
-                  _SummaryItem(label: '均烈度', value: avgIntensity, color: colorScheme.tertiary),
+                  _SummaryItem(
+                    label: '投放',
+                    value: '$totalCount 次',
+                    color: colorScheme.primary,
+                  ),
+                  _SummaryItem(
+                    label: '均烈度',
+                    value: avgIntensity,
+                    color: colorScheme.tertiary,
+                  ),
                   _SummaryItem(
                     label: '主情绪',
                     value: '${topE.emoji} ${topE.label}',

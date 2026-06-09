@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 
 /// 首页余烬漂浮粒子效果 (DESIGN.md §2.2)
 ///
-/// 12 个细小粒子，缓慢上浮 + 正弦横向漂移，
-/// 颜色跟随主题 primary，透明度 0.05~0.15。
+/// 18 个细小粒子，缓慢上浮 + 正弦横向漂移 + 轻微闪烁，
+/// 颜色跟随主题 primary，透明度 0.025~0.13。
 ///
 /// 使用方式：
 /// ```dart
@@ -19,10 +19,7 @@ import 'package:flutter/material.dart';
 class EmberParticleField extends StatefulWidget {
   final int particleCount;
 
-  const EmberParticleField({
-    super.key,
-    this.particleCount = 12,
-  });
+  const EmberParticleField({super.key, this.particleCount = 18});
 
   @override
   State<EmberParticleField> createState() => _EmberParticleFieldState();
@@ -45,7 +42,7 @@ class _EmberParticleFieldState extends State<EmberParticleField>
     // 一次 ticker，粒子通过 progress 自行推算当前位置
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 15),
+      duration: const Duration(seconds: 24),
     )..repeat();
   }
 
@@ -104,6 +101,9 @@ class _Particle {
   /// 粒子半径 px (1~3)
   final double radius;
 
+  /// 景深系数，越大越靠前
+  final double depth;
+
   /// 最大透明度
   final double maxAlpha;
 
@@ -115,6 +115,7 @@ class _Particle {
     required this.swingAmp,
     required this.swingFreq,
     required this.radius,
+    required this.depth,
     required this.maxAlpha,
   });
 
@@ -122,12 +123,13 @@ class _Particle {
     return _Particle(
       x: rng.nextDouble(),
       yStart: 0.7 + rng.nextDouble() * 0.3,
-      period: 8.0 + rng.nextDouble() * 7.0,
+      period: 14.0 + rng.nextDouble() * 12.0,
       phase: rng.nextDouble(),
-      swingAmp: 0.02 + rng.nextDouble() * 0.04,
+      swingAmp: 0.012 + rng.nextDouble() * 0.035,
       swingFreq: rng.nextBool() ? 1.0 : 2.0,
-      radius: 1.0 + rng.nextDouble() * 2.0,
-      maxAlpha: 0.05 + rng.nextDouble() * 0.10,
+      radius: 0.7 + rng.nextDouble() * 2.2,
+      depth: 0.55 + rng.nextDouble() * 0.75,
+      maxAlpha: 0.025 + rng.nextDouble() * 0.105,
     );
   }
 }
@@ -151,7 +153,7 @@ class _ParticlePainter extends CustomPainter {
 
     for (final p in particles) {
       // 当前粒子在自己周期内的进度（0~1）
-      final t = ((progress * 15.0 / p.period) + p.phase) % 1.0;
+      final t = ((progress * 24.0 / p.period) + p.phase) % 1.0;
 
       // 纵向：从 yStart 上浮到 yStart - 1.1（离开屏幕）
       final y = (p.yStart - t * 1.1) * size.height;
@@ -160,7 +162,8 @@ class _ParticlePainter extends CustomPainter {
       if (y < -p.radius * 2 || y > size.height + p.radius) continue;
 
       // 横向：正弦摆动
-      final swing = math.sin(t * math.pi * 2.0 * p.swingFreq) * p.swingAmp;
+      final swing =
+          math.sin(t * math.pi * 2.0 * p.swingFreq + p.phase) * p.swingAmp;
       final x = (p.x + swing) * size.width;
 
       // 透明度：起始时淡入(0→maxAlpha)，快离开时淡出(maxAlpha→0)
@@ -170,12 +173,20 @@ class _ParticlePainter extends CustomPainter {
       } else if (t > 0.85) {
         alpha = p.maxAlpha * ((1.0 - t) / 0.15);
       } else {
-        alpha = p.maxAlpha;
+        final twinkle = 0.82 + 0.18 * math.sin((t + p.phase) * math.pi * 4.0);
+        alpha = p.maxAlpha * twinkle;
       }
 
       paint.color = color.withValues(alpha: alpha.clamp(0.0, 1.0));
 
-      canvas.drawCircle(Offset(x, y), p.radius, paint);
+      final radius = p.radius * p.depth;
+      final center = Offset(x, y);
+      final haloPaint = Paint()
+        ..style = PaintingStyle.fill
+        ..color = color.withValues(alpha: (alpha * 0.16).clamp(0.0, 1.0));
+
+      canvas.drawCircle(center, radius * 3.4, haloPaint);
+      canvas.drawCircle(center, radius, paint);
     }
   }
 

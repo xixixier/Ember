@@ -22,10 +22,14 @@ class ToDestroyScreen extends ConsumerStatefulWidget {
 class _ToDestroyScreenState extends ConsumerState<ToDestroyScreen> {
   Timer? _timer;
   int _nowSeconds = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+  late final Stream<List<Entry>> _pendingEntriesStream;
 
   @override
   void initState() {
     super.initState();
+    _pendingEntriesStream = ref
+        .read(entryDaoProvider)
+        .watchPendingDestroyEntries();
     // 每秒更新一次倒计时
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) {
@@ -67,7 +71,7 @@ class _ToDestroyScreenState extends ConsumerState<ToDestroyScreen> {
         ],
       ),
       body: StreamBuilder<List<Entry>>(
-        stream: entryDao.watchPendingDestroyEntries(),
+        stream: _pendingEntriesStream,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -75,7 +79,9 @@ class _ToDestroyScreenState extends ConsumerState<ToDestroyScreen> {
 
           // 前端过滤：只显示还没到期的条目
           final allItems = snapshot.data ?? [];
-          final items = allItems.where((e) => e.destroyAt > _nowSeconds).toList();
+          final items = allItems
+              .where((e) => e.destroyAt > _nowSeconds)
+              .toList();
 
           if (items.isEmpty) {
             return const EmberEmptyState(
@@ -106,21 +112,18 @@ class _ToDestroyScreenState extends ConsumerState<ToDestroyScreen> {
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
                 sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final entry = items[index];
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: _PendingDestroyCard(
-                          entry: entry,
-                          nowSeconds: _nowSeconds,
-                          onDestroyNow: () => _destroyNow(entryDao, entry),
-                          onCancel: () => _cancelDestroy(entryDao, entry),
-                        ),
-                      );
-                    },
-                    childCount: items.length,
-                  ),
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    final entry = items[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: _PendingDestroyCard(
+                        entry: entry,
+                        nowSeconds: _nowSeconds,
+                        onDestroyNow: () => _destroyNow(entryDao, entry),
+                        onCancel: () => _cancelDestroy(entryDao, entry),
+                      ),
+                    );
+                  }, childCount: items.length),
                 ),
               ),
             ],
@@ -275,7 +278,9 @@ class _ToDestroyScreenState extends ConsumerState<ToDestroyScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('已销毁 ${DestroyStyle.fromName(entry.destroyStyle).emoji}'),
+              content: Text(
+                '已销毁 ${DestroyStyle.fromName(entry.destroyStyle).emoji}',
+              ),
               duration: const Duration(seconds: 2),
               behavior: SnackBarBehavior.floating,
             ),
@@ -409,7 +414,10 @@ class _PendingDestroyCard extends StatelessWidget {
     // 计算销毁进度
     final totalDuration = entry.destroyAt - entry.createdAt;
     final elapsed = nowSeconds - entry.createdAt;
-    final progress = (totalDuration > 0 ? elapsed / totalDuration : 0.0).clamp(0.0, 1.0);
+    final progress = (totalDuration > 0 ? elapsed / totalDuration : 0.0).clamp(
+      0.0,
+      1.0,
+    );
 
     return EmberCard(
       borderRadius: 14,
@@ -423,7 +431,10 @@ class _PendingDestroyCard extends StatelessWidget {
               children: [
                 // 情绪标签
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: emotion.color.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(8),
@@ -451,7 +462,10 @@ class _PendingDestroyCard extends StatelessWidget {
                 const SizedBox(width: 8),
                 // 销毁方式
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: accentColor.withValues(alpha: 0.10),
                     borderRadius: BorderRadius.circular(8),
@@ -476,7 +490,9 @@ class _PendingDestroyCard extends StatelessWidget {
                 Text(
                   _formatRemaining(remaining),
                   style: TextStyle(
-                    color: isUrgent ? urgentColor : colorScheme.onSurfaceVariant,
+                    color: isUrgent
+                        ? urgentColor
+                        : colorScheme.onSurfaceVariant,
                     fontSize: 13,
                     fontWeight: isUrgent ? FontWeight.w700 : FontWeight.w500,
                     fontFeatures: const [FontFeature.tabularFigures()],
@@ -577,7 +593,9 @@ class _PendingDestroyCard extends StatelessWidget {
   String _formatRemaining(int seconds) {
     if (seconds <= 0) return '销毁中...';
     if (seconds < 60) return '$seconds 秒后';
-    if (seconds < 3600) return '${seconds ~/ 60}:${(seconds % 60).toString().padLeft(2, '0')} 后';
+    if (seconds < 3600) {
+      return '${seconds ~/ 60}:${(seconds % 60).toString().padLeft(2, '0')} 后';
+    }
     if (seconds < 86400) {
       final h = seconds ~/ 3600;
       final m = (seconds % 3600) ~/ 60;
