@@ -59,13 +59,19 @@ class _BurnAnimationState extends State<BurnAnimation>
             // 文字渐隐
             if (_controller.value < 0.7)
               Opacity(
-                opacity: 1.0 - (_controller.value / 0.7),
-                child: Text(
-                  widget.textHint ?? '烧掉它',
-                  style: TextStyle(
-                    color: colorScheme.onSurface,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w500,
+                opacity: (1.0 - (_controller.value / 0.7)).clamp(0.0, 1.0),
+                child: SizedBox(
+                  width: 280,
+                  child: Text(
+                    widget.textHint ?? '烧掉它',
+                    textAlign: TextAlign.center,
+                    maxLines: 4,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: colorScheme.onSurface,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
               ),
@@ -82,7 +88,7 @@ class _BurnAnimationState extends State<BurnAnimation>
             // 灰烬消散
             if (_controller.value > 0.8)
               Opacity(
-                opacity: (_controller.value - 0.8) / 0.2,
+                opacity: ((_controller.value - 0.8) / 0.2).clamp(0.0, 1.0),
                 child: Text(
                   '已化为灰烬',
                   style: TextStyle(
@@ -128,8 +134,8 @@ class _FlamePainter extends CustomPainter {
       // 颜色：底部橙红，顶部暗红/灰
       final t = particleProgress;
       final color = Color.lerp(
-        const Color(0xFFFF6B35),
-        const Color(0xFF4A1508),
+        const Color(0xFFE46F3A),
+        const Color(0xFF591D00),
         t,
       )!.withValues(alpha: 1.0 - t * 0.5);
 
@@ -150,8 +156,8 @@ class _FlamePainter extends CustomPainter {
       // 内核亮色
       if (t < 0.5) {
         final coreColor = Color.lerp(
-          const Color(0xFFFFF176),
-          const Color(0xFFFF9800),
+          const Color(0xFFF3DED7),
+          const Color(0xFFFFB598),
           t * 2,
         )!.withValues(alpha: 0.6 * (1.0 - t * 2));
         canvas.drawOval(
@@ -171,7 +177,7 @@ class _FlamePainter extends CustomPainter {
       final glowPaint = Paint()
         ..shader = RadialGradient(
           colors: [
-            const Color(0xFFFF6B35).withValues(alpha: glowAlpha),
+            const Color(0xFFE46F3A).withValues(alpha: glowAlpha),
             Colors.transparent,
           ],
         ).createShader(Rect.fromLTWH(0, size.height * 0.6, size.width, size.height * 0.4));

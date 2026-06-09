@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTypography {
-  /// 引导语字体 — Playfair Display，衬线体，典雅感
-  static TextStyle get guideText => GoogleFonts.playfairDisplay(
+  /// 引导语字体 — Cinematic
+  static TextStyle get guideText => GoogleFonts.inter(
         textStyle: const TextStyle(
           fontSize: 16,
           fontStyle: FontStyle.italic,
@@ -12,26 +12,26 @@ class AppTypography {
         ),
       );
 
-  /// 正文大字输入 — Noto Sans SC，清晰大字号
-  static TextStyle get inputText => GoogleFonts.notoSansSc(
+  /// 正文大字输入 — Inter, borderless cursor focus
+  static TextStyle get inputText => GoogleFonts.inter(
         textStyle: const TextStyle(
           fontSize: 18,
-          height: 1.8,
-          fontWeight: FontWeight.w400,
+          height: 1.55,
+          fontWeight: FontWeight.w300,
         ),
       );
 
-  /// 正文提示文字
-  static TextStyle get inputHint => GoogleFonts.notoSansSc(
+  /// 正文提示文字 (Ash Grey whisper)
+  static TextStyle get inputHint => GoogleFonts.inter(
         textStyle: const TextStyle(
           fontSize: 18,
-          height: 1.8,
+          height: 1.55,
           fontWeight: FontWeight.w300,
         ),
       );
 
   /// 按钮
-  static TextStyle get button => GoogleFonts.notoSansSc(
+  static TextStyle get button => GoogleFonts.inter(
         textStyle: const TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w600,
@@ -40,7 +40,7 @@ class AppTypography {
       );
 
   /// 卡片标题
-  static TextStyle get cardTitle => GoogleFonts.notoSansSc(
+  static TextStyle get cardTitle => GoogleFonts.inter(
         textStyle: const TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.w600,
@@ -48,7 +48,7 @@ class AppTypography {
       );
 
   /// 卡片正文
-  static TextStyle get cardBody => GoogleFonts.notoSansSc(
+  static TextStyle get cardBody => GoogleFonts.inter(
         textStyle: const TextStyle(
           fontSize: 13,
           height: 1.5,
@@ -57,7 +57,7 @@ class AppTypography {
       );
 
   /// 次要标签
-  static TextStyle get caption => GoogleFonts.notoSansSc(
+  static TextStyle get caption => GoogleFonts.inter(
         textStyle: const TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w400,
@@ -66,7 +66,7 @@ class AppTypography {
       );
 
   /// 转化结果 — 莎翁风格
-  static TextStyle get shakespeare => GoogleFonts.playfairDisplay(
+  static TextStyle get shakespeare => GoogleFonts.inter(
         textStyle: const TextStyle(
           fontSize: 16,
           height: 1.7,
@@ -76,7 +76,7 @@ class AppTypography {
       );
 
   /// 转化结果 — 俳句风格
-  static TextStyle get haiku => GoogleFonts.notoSerifSc(
+  static TextStyle get haiku => GoogleFonts.inter(
         textStyle: const TextStyle(
           fontSize: 18,
           height: 2.0,
@@ -87,49 +87,83 @@ class AppTypography {
 
   /// 构建 TextTheme（融入 ThemeData）
   static TextTheme buildTextTheme(ColorScheme colorScheme) {
-    final base = GoogleFonts.notoSansScTextTheme().copyWith(
-      displayLarge: GoogleFonts.playfairDisplay(
+    final base = GoogleFonts.interTextTheme().copyWith(
+      displayLarge: GoogleFonts.inter(
         textStyle: TextStyle(
-          fontSize: 32,
-          fontWeight: FontWeight.w700,
+          fontSize: 40,
+          fontWeight: FontWeight.w300,
+          height: 1.2,
+          letterSpacing: -0.02,
           color: colorScheme.onSurface,
         ),
       ),
-      headlineMedium: GoogleFonts.playfairDisplay(
+      displayMedium: GoogleFonts.inter(
+        textStyle: TextStyle(
+          fontSize: 32,
+          fontWeight: FontWeight.w300,
+          height: 1.25,
+          letterSpacing: -0.02,
+          color: colorScheme.onSurface,
+        ),
+      ),
+      headlineMedium: GoogleFonts.inter(
         textStyle: TextStyle(
           fontSize: 24,
+          fontWeight: FontWeight.w400,
+          height: 1.33,
+          letterSpacing: 0.01,
+          color: colorScheme.onSurface,
+        ),
+      ),
+      titleLarge: GoogleFonts.inter(
+        textStyle: TextStyle(
+          fontSize: 20,
           fontWeight: FontWeight.w600,
           color: colorScheme.onSurface,
         ),
       ),
-      titleLarge: TextStyle(
-        fontSize: 20,
-        fontWeight: FontWeight.w600,
-        color: colorScheme.onSurface,
+      bodyLarge: GoogleFonts.inter(
+        textStyle: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w300,
+          height: 1.55,
+          letterSpacing: 0.01,
+          color: colorScheme.onSurface,
+        ),
       ),
-      bodyLarge: TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.w400,
-        height: 1.8,
-        color: colorScheme.onSurface,
+      bodyMedium: GoogleFonts.inter(
+        textStyle: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w400,
+          height: 1.5,
+          letterSpacing: 0.01,
+          color: colorScheme.onSurface,
+        ),
       ),
-      bodyMedium: TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w400,
-        height: 1.5,
-        color: colorScheme.onSurface,
+      labelLarge: GoogleFonts.inter(
+        textStyle: TextStyle(
+          fontSize: 12, // label-caps
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.1,
+          height: 1.33,
+          color: colorScheme.onSurface,
+        ),
       ),
-      labelLarge: TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 0.5,
-        color: colorScheme.onSurface,
+      labelSmall: GoogleFonts.inter(
+        textStyle: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w400,
+          letterSpacing: 0.3,
+          color: colorScheme.onSurfaceVariant,
+        ),
       ),
-      labelSmall: TextStyle(
-        fontSize: 11,
-        fontWeight: FontWeight.w400,
-        letterSpacing: 0.3,
-        color: colorScheme.onSurfaceVariant,
+      bodySmall: GoogleFonts.inter(
+        textStyle: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w400,
+          height: 1.38,
+          color: colorScheme.onSurfaceVariant,
+        ),
       ),
     );
     return base;

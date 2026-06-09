@@ -15,11 +15,11 @@ class EmberNavigationBar extends StatelessWidget {
   final ValueChanged<int> onDestinationSelected;
 
   static const _destinations = [
-    _NavDestination(icon: Icons.local_fire_department_outlined, activeIcon: Icons.local_fire_department, label: '投放'),
-    _NavDestination(icon: Icons.auto_awesome_outlined, activeIcon: Icons.auto_awesome, label: '收藏'),
-    _NavDestination(icon: Icons.whatshot_outlined, activeIcon: Icons.whatshot, label: '待毁'),
-    _NavDestination(icon: Icons.bar_chart_outlined, activeIcon: Icons.bar_chart, label: '回望'),
-    _NavDestination(icon: Icons.person_outline, activeIcon: Icons.person, label: '我的'),
+    _NavDestination(icon: Icons.local_fire_department_outlined, activeIcon: Icons.local_fire_department_outlined, label: '投放'),
+    _NavDestination(icon: Icons.auto_awesome_outlined, activeIcon: Icons.auto_awesome_outlined, label: '收藏'),
+    _NavDestination(icon: Icons.whatshot_outlined, activeIcon: Icons.whatshot_outlined, label: '待毁'),
+    _NavDestination(icon: Icons.bar_chart_outlined, activeIcon: Icons.bar_chart_outlined, label: '回望'),
+    _NavDestination(icon: Icons.person_outline, activeIcon: Icons.person_outline, label: '我的'),
   ];
 
   const EmberNavigationBar({
@@ -36,37 +36,34 @@ class EmberNavigationBar extends StatelessWidget {
     final surfaceColor = colorScheme.surface;
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Container(
-          decoration: BoxDecoration(
-            color: surfaceColor.withValues(alpha: 0.85),
-            border: Border(
-              top: BorderSide(
-                color: primaryColor.withValues(alpha: 0.12),
-                width: 0.5,
+    return Padding(
+      padding: EdgeInsets.fromLTRB(24, 0, 24, bottomPadding > 0 ? bottomPadding : 24),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(9999), // Pill-shaped floating bar
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            decoration: BoxDecoration(
+              color: surfaceColor.withValues(alpha: 0.8),
+              border: Border.all(
+                color: colorScheme.onSurface.withValues(alpha: 0.1),
+                width: 1.0,
               ),
+              borderRadius: BorderRadius.circular(9999),
             ),
-          ),
-          child: SafeArea(
-            top: false,
             child: SizedBox(
-              height: 60 + bottomPadding,
-              child: Padding(
-                padding: EdgeInsets.only(bottom: bottomPadding),
-                child: Row(
-                  children: List.generate(
-                    _destinations.length,
-                    (index) => Expanded(
-                      child: _NavItem(
-                        destination: _destinations[index],
-                        isSelected: selectedIndex == index,
-                        primaryColor: primaryColor,
-                        inactiveColor: colorScheme.onSurfaceVariant,
-                        textWeak: ext?.textWeak ?? colorScheme.onSurfaceVariant,
-                        onTap: () => onDestinationSelected(index),
-                      ),
+              height: 64,
+              child: Row(
+                children: List.generate(
+                  _destinations.length,
+                  (index) => Expanded(
+                    child: _NavItem(
+                      destination: _destinations[index],
+                      isSelected: selectedIndex == index,
+                      primaryColor: primaryColor,
+                      inactiveColor: colorScheme.onSurfaceVariant,
+                      textWeak: ext?.textWeak ?? colorScheme.onSurfaceVariant,
+                      onTap: () => onDestinationSelected(index),
                     ),
                   ),
                 ),
@@ -99,67 +96,39 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 无论是选中还是未选中，图标颜色保持一致，通过底部的小圆点指示状态
+    final iconColor = inactiveColor;
+    
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // 图标 + 选中光晕
+          Icon(
+            destination.icon,
+            size: 24,
+            color: iconColor,
+          ),
+          const SizedBox(height: 4),
+          // 底部小指示点 (tiny glowing ember dot)
           AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeOutCubic,
-            width: 44,
-            height: 32,
+            width: 4,
+            height: 4,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              color: isSelected
-                  ? primaryColor.withValues(alpha: 0.14)
-                  : Colors.transparent,
+              color: isSelected ? primaryColor : Colors.transparent,
+              shape: BoxShape.circle,
               boxShadow: isSelected
                   ? [
                       BoxShadow(
-                        color: primaryColor.withValues(alpha: 0.18),
-                        blurRadius: 12,
-                        spreadRadius: 0,
+                        color: primaryColor.withValues(alpha: 0.6),
+                        blurRadius: 4,
+                        spreadRadius: 1,
                       ),
                     ]
                   : null,
-            ),
-            child: Center(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 180),
-                child: Icon(
-                  isSelected ? destination.activeIcon : destination.icon,
-                  key: ValueKey(isSelected),
-                  size: 22,
-                  color: isSelected ? primaryColor : inactiveColor,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 3),
-          // 标签文字
-          AnimatedDefaultTextStyle(
-            duration: const Duration(milliseconds: 200),
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-              color: isSelected ? primaryColor : textWeak,
-              letterSpacing: 0.2,
-            ),
-            child: Text(destination.label),
-          ),
-          const SizedBox(height: 2),
-          // 底部小指示点
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeOutCubic,
-            width: isSelected ? 16 : 0,
-            height: 2,
-            decoration: BoxDecoration(
-              color: primaryColor.withValues(alpha: isSelected ? 0.8 : 0),
-              borderRadius: BorderRadius.circular(1),
             ),
           ),
         ],

@@ -1,22 +1,15 @@
 import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ember/core/providers/database_provider.dart';
 import 'package:ember/data/database/app_database.dart';
 
 /// 指定月份的 daily_stats 流
+/// 不再吞掉异常——让 Riverpod 把错误传给 UI，由 UI 决定是否显示错误状态
 final calendarMonthProvider =
     StreamProvider.family<List<DailyStat>, String>((ref, monthPrefix) {
   final dao = ref.watch(dailyStatsDaoProvider);
-  // 正确捕获错误并返回空列表，避免 Riverpod 反复重试
-  return dao.watchMonthStats(monthPrefix).transform(
-    StreamTransformer.fromHandlers(
-      handleData: (data, sink) => sink.add(data),
-      handleError: (error, stackTrace, sink) {
-        // 错误时返回空列表而不是崩溃
-        sink.add(<DailyStat>[]);
-      },
-    ),
-  );
+  return dao.watchMonthStats(monthPrefix);
 });
 
 /// 当前选中月份（格式 "2026-04"）

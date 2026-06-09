@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:ember/core/constants/emotions.dart';
 import 'package:ember/core/constants/destroy_styles.dart';
 import 'package:ember/core/theme/ember_theme_extension.dart';
+import '../animations/destroy_animation_factory.dart';
 
 /// 全屏倒计时页面
 /// 用于展示条目在销毁前的最后时刻
@@ -106,10 +107,7 @@ class _DestroyCountdownScreenState extends State<DestroyCountdownScreen>
     _countdownController.addStatusListener((status) {
       if (status == AnimationStatus.completed && !_isComplete) {
         setState(() => _isComplete = true);
-        // 自动返回，表示已完成
-        Future.delayed(const Duration(milliseconds: 800), () {
-          if (mounted) Navigator.of(context).pop(true);
-        });
+        // 不再自动返回，等待全屏销毁动画执行完毕后自动 pop
       }
     });
 
@@ -162,16 +160,16 @@ class _DestroyCountdownScreenState extends State<DestroyCountdownScreen>
     final fireOrange = ext?.fireOrange ?? const Color(0xFFFF8A4C);
     final darkRed = ext?.darkRedOrange ?? const Color(0xFFA9472B);
 
-    return Scaffold(
-      backgroundColor: Colors.black87,
-      body: PopScope(
-        canPop: false,
-        onPopInvokedWithResult: (didPop, _) {
-          if (!didPop && !_isComplete) {
-            Navigator.of(context).pop(false);
-          }
-        },
-        child: Stack(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && !_isComplete) {
+          Navigator.of(context).pop(false);
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Colors.black87,
+        body: Stack(
           children: [
             // 背景渐变
             Positioned.fill(
@@ -192,46 +190,73 @@ class _DestroyCountdownScreenState extends State<DestroyCountdownScreen>
             // 浮动粒子
             Positioned.fill(
               child: AnimatedBuilder(
-              animation: _particleController,
-              builder: (context, _) {
-                return CustomPaint(
-                  painter: _ParticlePainter(
-                    particles: _particles,
-                    progress: _particleController.value,
-                    emberGold: emberGold,
-                    fireOrange: fireOrange,
-                  ),
-                );
-              },
+                animation: _particleController,
+                builder: (context, _) {
+                  return CustomPaint(
+                    painter: _ParticlePainter(
+                      particles: _particles,
+                      progress: _particleController.value,
+                      emberGold: emberGold,
+                      fireOrange: fireOrange,
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
 
-          // 主内容
-          SafeArea(
-            child: Column(
-              children: [
-                // 顶部安全区域
-                const SizedBox(height: 24),
+            // 主内容和动画切换
+            SafeArea(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 800),
+                switchInCurve: Curves.easeOut,
+                switchOutCurve: Curves.easeIn,
+                child: _isComplete
+                    ? Center(
+                        key: const ValueKey('destroy_anim'),
+                        child: DestroyAnimationFactory.create(
+                          style: widget.destroyStyle,
+                          intensity: widget.intensity,
+                          textHint: widget.content.isEmpty ? '化为余烬' : widget.content,
+                          onComplete: () {
+                            if (mounted) Navigator.of(context).pop(true);
+                          },
+                        ),
+                      )
+                    : _buildCountdownContent(context, emberGold, fireOrange, darkRed),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-                // 情绪标签
-                _buildEmotionTag(emberGold),
+  Widget _buildCountdownContent(BuildContext context, Color emberGold, Color fireOrange, Color darkRed) {
+    return Column(
+      key: const ValueKey('countdown'),
+      children: [
+        // 顶部安全区域
+        const SizedBox(height: 24),
 
-                const SizedBox(height: 32),
+        // 情绪标签
+        _buildEmotionTag(emberGold),
 
-                // 大号倒计时数字
-                Expanded(
-                  child: Center(
-                    child: AnimatedBuilder(
-                      animation: _countdownController,
-                      builder: (context, _) {
-                        if (_isComplete) {
-                          // 完成状态：显示销毁 emoji
-                          return TweenAnimationBuilder<double>(
-                            tween: Tween(begin: 0.5, end: 1.5),
-                            duration: const Duration(milliseconds: 600),
-                            curve: Curves.easeOutBack,
-                            builder: (context, scale, child) {
-                              return Transform.scale(
+        const SizedBox(height: 32),
+
+        // 大号倒计时数字
+        Expanded(
+          child: Center(
+            child: AnimatedBuilder(
+              animation: _countdownController,
+              builder: (context, _) {
+                if (_isComplete) {
+                  // 完成状态：显示销毁 emoji
+                  return TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0.5, end: 1.5),
+                    duration: const Duration(milliseconds: 600),
+                    curve: Curves.easeOutBack,
+                    builder: (context, scale, child) {
+                      return Transform.scale(
                                 scale: scale,
                                 child: Opacity(
                                   opacity: _isComplete ? 1.0 : 0.0,
@@ -394,19 +419,11 @@ class _DestroyCountdownScreenState extends State<DestroyCountdownScreen>
                       Expanded(
                         child: TextButton(
                           onPressed: () {
-                            // 立即完成：停止动画，直接跳到完成状态
+                            // 立即完成：停止倒计时，触发全屏销毁动画
                             _countdownController.stop();
                             setState(() {
                               _remainingSeconds = 0;
                               _isComplete = true;
-                            });
-                            // 设置动画控制器到结束状态（用于build方法中的动画）
-                            _countdownController.value = 1.0;
-                            // 延迟返回，让用户看到完成状态
-                            final navigator = Navigator.of(context);
-                            Future.delayed(const Duration(milliseconds: 800), () {
-                              if (!mounted) return;
-                              navigator.pop(true);
                             });
                           },
                           style: TextButton.styleFrom(
@@ -433,13 +450,7 @@ class _DestroyCountdownScreenState extends State<DestroyCountdownScreen>
                   ),
                 ),
 
-                const SizedBox(height: 16),
               ],
-            ),
-          ),
-        ],
-      ),
-      ), // PopScope
     );
   }
 

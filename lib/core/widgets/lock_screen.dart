@@ -6,7 +6,8 @@ import '../services/pin_service.dart';
 /// 应用锁屏页面
 /// 支持生物识别 + 6位数字密码两种解锁方式
 class LockScreen extends ConsumerStatefulWidget {
-  const LockScreen({super.key});
+  final VoidCallback? onUnlocked;
+  const LockScreen({super.key, this.onUnlocked});
 
   @override
   ConsumerState<LockScreen> createState() => _LockScreenState();
@@ -37,7 +38,11 @@ class _LockScreenState extends ConsumerState<LockScreen> {
   Future<void> _authenticateBiometric() async {
     final success = await AuthService.instance.authenticate();
     if (success && mounted) {
-      Navigator.of(context).pop(true);
+      if (widget.onUnlocked != null) {
+        widget.onUnlocked!();
+      } else {
+        Navigator.of(context).pop(true);
+      }
     }
   }
 
@@ -54,7 +59,11 @@ class _LockScreenState extends ConsumerState<LockScreen> {
     if (!mounted) return;
 
     if (success) {
-      Navigator.of(context).pop(true);
+      if (widget.onUnlocked != null) {
+        widget.onUnlocked!();
+      } else {
+        Navigator.of(context).pop(true);
+      }
     } else {
       setState(() {
         _errorMessage = '密码错误，请重试';

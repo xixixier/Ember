@@ -44,7 +44,11 @@ class ShakespeareEngine extends TransformEngine {
           userMessage: text,
         );
         return TransformResult(type: type, content: content);
-      } catch (_) {
+      } catch (e, st) {
+        // API 失败时打印错误到控制台，方便调试；然后回退本地
+        // ignore: avoid_print
+        print('[ShakespeareEngine] API 调用失败: $e');
+        if (st != null) print(st);
         // 失败则回退本地
       }
     }

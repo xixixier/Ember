@@ -1,41 +1,78 @@
 import 'package:flutter/material.dart';
 
 class ColorTokens {
-  // 暗色主题
-  static const darkSurface = Color(0xFF1A1A1A);
-  static const darkSurfaceVariant = Color(0xFF2A2A2A);
-  static const darkPrimary = Color(0xFFE8915A);
-  static const darkAccent = Color(0xFFFF6B35);
-  static const darkTextPrimary = Color(0xFFF5F0EB);
-  static const darkTextSecondary = Color(0xFF9A9590);
-  static const darkBorder = Color(0xFF3A3530);
+  // Deep Dark Foundation (Ember Sanctuary)
+  static const surface = Color(0xFF1B110D);
+  static const surfaceVariant = Color(0xFF3F322D);
+  static const surfaceBright = Color(0xFF433631);
+  static const surfaceContainerLowest = Color(0xFF150C08);
+  static const surfaceContainerLow = Color(0xFF241915);
+  static const surfaceContainer = Color(0xFF281D19);
+  static const surfaceContainerHigh = Color(0xFF332723);
+  static const surfaceContainerHighest = Color(0xFF3F322D);
 
-  // 暖灰主题
-  static const warmGraySurface = Color(0xFF2D2B28);
-  static const warmGraySurfaceVariant = Color(0xFF3D3A36);
-  static const warmGrayPrimary = Color(0xFFD4A574);
-  static const warmGrayAccent = Color(0xFFC8956C);
-  static const warmGrayTextPrimary = Color(0xFFF0EBE3);
-  static const warmGrayTextSecondary = Color(0xFF8A837A);
-  static const warmGrayBorder = Color(0xFF4A453E);
+  static const onSurface = Color(0xFFF3DED7); // Soft Parchment
+  static const onSurfaceVariant = Color(0xFFDEC0B5);
+  
+  static const outline = Color(0xFFA58B81);
+  static const outlineVariant = Color(0xFF57423A);
+  
+  // Ember Glow
+  static const primary = Color(0xFFFFB598);
+  static const onPrimary = Color(0xFF591D00);
+  static const primaryContainer = Color(0xFFE46F3A);
+  static const onPrimaryContainer = Color(0xFF4E1800);
+  
+  static const secondary = Color(0xFFFFB781);
+  static const onSecondary = Color(0xFF4E2500);
+  static const secondaryContainer = Color(0xFF713B06);
+  static const onSecondaryContainer = Color(0xFFF5A76B);
+  
+  static const tertiary = Color(0xFFFFB693);
+  static const onTertiary = Color(0xFF562000);
+  static const tertiaryContainer = Color(0xFFE07236);
+  static const onTertiaryContainer = Color(0xFF4B1B00);
+  
+  static const error = Color(0xFFFFB4AB);
+  static const onError = Color(0xFF690005);
+  static const errorContainer = Color(0xFF93000A);
+  static const onErrorContainer = Color(0xFFFFDAD6);
 
-  // 深蓝主题
-  static const deepBlueSurface = Color(0xFF0D1B2A);
-  static const deepBlueSurfaceVariant = Color(0xFF1B2838);
-  static const deepBluePrimary = Color(0xFF6EA4BF);
-  static const deepBlueAccent = Color(0xFF4A90A8);
-  static const deepBlueTextPrimary = Color(0xFFE0E8EF);
-  static const deepBlueTextSecondary = Color(0xFF7A8A98);
-  static const deepBlueBorder = Color(0xFF2A3A4A);
+  static const background = Color(0xFF1B110D);
+  static const onBackground = Color(0xFFF3DED7);
 
-  // 纯黑主题
-  static const pureBlackSurface = Color(0xFF000000);
-  static const pureBlackSurfaceVariant = Color(0xFF111111);
-  static const pureBlackPrimary = Color(0xFFFF5722);
-  static const pureBlackAccent = Color(0xFFFF8A65);
-  static const pureBlackTextPrimary = Color(0xFFECECEC);
-  static const pureBlackTextSecondary = Color(0xFF757575);
-  static const pureBlackBorder = Color(0xFF222222);
+  // For backward compatibility with existing tokens (remapping to Ember design)
+  static const darkSurface = surface;
+  static const darkSurfaceVariant = surfaceVariant;
+  static const darkPrimary = primaryContainer;
+  static const darkAccent = secondary;
+  static const darkTextPrimary = onSurface;
+  static const darkTextSecondary = onSurfaceVariant;
+  static const darkBorder = outlineVariant;
+  
+  static const warmGraySurface = surface;
+  static const warmGraySurfaceVariant = surfaceVariant;
+  static const warmGrayPrimary = primaryContainer;
+  static const warmGrayAccent = secondary;
+  static const warmGrayTextPrimary = onSurface;
+  static const warmGrayTextSecondary = onSurfaceVariant;
+  static const warmGrayBorder = outlineVariant;
+  
+  static const deepBlueSurface = surface;
+  static const deepBlueSurfaceVariant = surfaceVariant;
+  static const deepBluePrimary = primaryContainer;
+  static const deepBlueAccent = secondary;
+  static const deepBlueTextPrimary = onSurface;
+  static const deepBlueTextSecondary = onSurfaceVariant;
+  static const deepBlueBorder = outlineVariant;
+  
+  static const pureBlackSurface = surface;
+  static const pureBlackSurfaceVariant = surfaceVariant;
+  static const pureBlackPrimary = primaryContainer;
+  static const pureBlackAccent = secondary;
+  static const pureBlackTextPrimary = onSurface;
+  static const pureBlackTextSecondary = onSurfaceVariant;
+  static const pureBlackBorder = outlineVariant;
 
   // 烈度渐变色
   static const intensityColors = [

@@ -135,7 +135,9 @@ class AiApiService {
       _cachedApiKey != null &&
       _cachedApiKey!.isNotEmpty &&
       _cachedBaseUrl != null &&
-      _cachedBaseUrl!.isNotEmpty;
+      _cachedBaseUrl!.isNotEmpty &&
+      _cachedModel != null &&
+      _cachedModel!.isNotEmpty;
 
   // ── 持久化 ──
 

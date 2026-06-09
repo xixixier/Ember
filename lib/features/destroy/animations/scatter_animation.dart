@@ -82,13 +82,19 @@ class _ScatterAnimationState extends State<ScatterAnimation>
             // 文字碎裂+消失
             if (_controller.value < 0.5)
               Opacity(
-                opacity: 1.0 - (_controller.value * 2),
-                child: Text(
-                  widget.textHint ?? '随风散去',
-                  style: TextStyle(
-                    color: colorScheme.onSurface,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w500,
+                opacity: (1.0 - (_controller.value * 2)).clamp(0.0, 1.0),
+                child: SizedBox(
+                  width: 280,
+                  child: Text(
+                    widget.textHint ?? '随风散去',
+                    textAlign: TextAlign.center,
+                    maxLines: 4,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: colorScheme.onSurface,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
               ),

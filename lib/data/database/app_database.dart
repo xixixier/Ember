@@ -253,5 +253,13 @@ class AppDatabase extends _$AppDatabase {
 }
 
 QueryExecutor _openConnection() {
-  return driftDatabase(name: 'ember.db');
+  return driftDatabase(
+    name: 'ember.db',
+    native: DriftNativeOptions(
+      setup: (db) {
+        db.execute('PRAGMA journal_mode = WAL;');
+        db.execute('PRAGMA synchronous = NORMAL;');
+      },
+    ),
+  );
 }

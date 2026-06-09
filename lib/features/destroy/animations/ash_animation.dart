@@ -78,13 +78,19 @@ class _AshAnimationState extends State<AshAnimation>
             // 文字渐隐
             if (_controller.value < 0.6)
               Opacity(
-                opacity: 1.0 - (_controller.value / 0.6),
-                child: Text(
-                  widget.textHint ?? '化为余烬',
-                  style: TextStyle(
-                    color: colorScheme.onSurface,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w500,
+                opacity: (1.0 - (_controller.value / 0.6)).clamp(0.0, 1.0),
+                child: SizedBox(
+                  width: 280,
+                  child: Text(
+                    widget.textHint ?? '化为余烬',
+                    textAlign: TextAlign.center,
+                    maxLines: 4,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: colorScheme.onSurface,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
               ),
@@ -102,7 +108,7 @@ class _AshAnimationState extends State<AshAnimation>
             // 完成提示
             if (_controller.value > 0.85)
               Opacity(
-                opacity: (_controller.value - 0.85) / 0.15,
+                opacity: ((_controller.value - 0.85) / 0.15).clamp(0.0, 1.0),
                 child: Text(
                   '余烬已冷',
                   style: TextStyle(
@@ -173,20 +179,20 @@ class _AshPainter extends CustomPainter {
       final Color color;
       if (effectiveProgress < 0.4) {
         color = Color.lerp(
-          const Color(0xFFFFAB40),
-          const Color(0xFFFF6D00),
+          const Color(0xFFFFB598),
+          const Color(0xFFE46F3A),
           effectiveProgress / 0.4,
         )!;
       } else if (effectiveProgress < 0.7) {
         color = Color.lerp(
-          const Color(0xFFFF6D00),
-          const Color(0xFF8D3B00),
+          const Color(0xFFE46F3A),
+          const Color(0xFF591D00),
           (effectiveProgress - 0.4) / 0.3,
         )!;
       } else {
         color = Color.lerp(
-          const Color(0xFF8D3B00),
-          const Color(0xFF4A4A4A),
+          const Color(0xFF591D00),
+          const Color(0xFF3F322D),
           (effectiveProgress - 0.7) / 0.3,
         )!;
       }
@@ -219,7 +225,7 @@ class _AshPainter extends CustomPainter {
           Offset(x, y),
           particleSize * 0.4,
           Paint()
-            ..color = const Color(0xFFFFF8E1)
+            ..color = const Color(0xFFF3DED7)
                 .withValues(alpha: alpha * 0.6)
             ..style = PaintingStyle.fill,
         );

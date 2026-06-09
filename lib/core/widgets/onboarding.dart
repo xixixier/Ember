@@ -8,7 +8,9 @@ import 'package:ember/core/theme/ember_theme_extension.dart';
 const _kOnboardingDone = 'onboarding_done';
 
 class OnboardingScreen extends StatefulWidget {
-  const OnboardingScreen({super.key});
+  final VoidCallback? onDone;
+
+  const OnboardingScreen({super.key, this.onDone});
 
   /// 是否已完成引导
   static Future<bool> isDone() async {
@@ -77,7 +79,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   void _finish() {
     OnboardingScreen.markDone();
-    Navigator.of(context).pop(true);
+    if (widget.onDone != null) {
+      widget.onDone!();
+    } else {
+      Navigator.of(context).pop(true);
+    }
   }
 
   @override

@@ -150,6 +150,7 @@ class MainShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
       body: navigationShell,
       bottomNavigationBar: EmberNavigationBar(
         selectedIndex: navigationShell.currentIndex,

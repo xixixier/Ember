@@ -11,6 +11,42 @@ import 'data/services/destroy_scheduler.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // 捕获并显示所有 Flutter 框架错误
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.presentError(details);
+  };
+  
+  // 自定义错误界面，防止黑屏卡死
+  ErrorWidget.builder = (FlutterErrorDetails details) {
+    return Material(
+      color: Colors.red.shade900,
+      child: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'FATAL ERROR',
+                style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                details.exceptionAsString(),
+                style: const TextStyle(color: Colors.yellow, fontSize: 16),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                details.stack.toString(),
+                style: const TextStyle(color: Colors.white70, fontSize: 12),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  };
+
   // 初始化销毁调度（WorkManager）
   await DestroyScheduler.init();
   // 启动时立即检查一次过期条目
@@ -97,106 +133,31 @@ class _EmberAppState extends ConsumerState<EmberApp> with WidgetsBindingObserver
       );
     }
 
-    // 引导页
-    if (_showOnboarding) {
-      return MaterialApp(
-        debugShowCheckedModeBanner: false,
-        theme: theme,
-        home: _OnboardingWrapper(onDone: _onOnboardingDone),
-      );
-    }
-
-    // 应用锁
-    if (_isLocked) {
-      return MaterialApp(
-        debugShowCheckedModeBanner: false,
-        theme: theme,
-        home: _LockWrapper(onUnlocked: _onUnlocked),
-      );
-    }
-
-    // 正常主界面
+    // 始终使用 MaterialApp.router 作为根，保证路由和状态不丢失
     return MaterialApp.router(
       title: 'Ember',
       debugShowCheckedModeBanner: false,
       theme: theme,
       routerConfig: MainShell.router,
+      builder: (context, child) {
+        return Stack(
+          children: [
+            // ignore: use_null_aware_elements
+            if (child != null) child,
+            // 引导页 Overlay
+            if (_showOnboarding)
+              Positioned.fill(
+                child: OnboardingScreen(onDone: _onOnboardingDone),
+              ),
+            // 应用锁 Overlay (若引导已完成且处于锁屏状态)
+            if (!_showOnboarding && _isLocked)
+              Positioned.fill(
+                child: LockScreen(onUnlocked: _onUnlocked),
+              ),
+          ],
+        );
+      },
     );
   }
 }
 
-/// 引导页包装器，完成时回调
-class _OnboardingWrapper extends StatefulWidget {
-  final VoidCallback onDone;
-
-  const _OnboardingWrapper({required this.onDone});
-
-  @override
-  State<_OnboardingWrapper> createState() => _OnboardingWrapperState();
-}
-
-class _OnboardingWrapperState extends State<_OnboardingWrapper> {
-  @override
-  void initState() {
-    super.initState();
-    // 监听引导页完成
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _navigateToOnboarding();
-    });
-  }
-
-  Future<void> _navigateToOnboarding() async {
-    final result = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(builder: (_) => const OnboardingScreen()),
-    );
-    if (result == true) {
-      widget.onDone();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: CircularProgressIndicator()),
-    );
-  }
-}
-
-/// 锁屏包装器，解锁后回调
-class _LockWrapper extends StatefulWidget {
-  final VoidCallback onUnlocked;
-
-  const _LockWrapper({required this.onUnlocked});
-
-  @override
-  State<_LockWrapper> createState() => _LockWrapperState();
-}
-
-class _LockWrapperState extends State<_LockWrapper> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _navigateToLock();
-    });
-  }
-
-  Future<void> _navigateToLock() async {
-    final result = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(builder: (_) => const LockScreen()),
-    );
-    if (result == true) {
-      widget.onUnlocked();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return const PopScope(
-      canPop: false,
-      child: Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      ),
-    );
-  }
-}

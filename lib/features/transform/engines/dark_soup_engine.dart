@@ -39,7 +39,9 @@ class DarkSoupEngine extends TransformEngine {
           userMessage: text,
         );
         return TransformResult(type: type, content: content);
-      } catch (_) {
+      } catch (e, st) {
+        print('[DarkSoupEngine] API 调用失败: $e');
+        if (st != null) print(st);
         // 失败则回退本地
       }
     }
