@@ -48,89 +48,147 @@ class _ToDestroyScreenState extends ConsumerState<ToDestroyScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final ext = Theme.of(context).extension<EmberThemeExtension>();
-    final entryDao = ref.watch(entryDaoProvider);
+    try {
+      final colorScheme = Theme.of(context).colorScheme;
+      final ext = Theme.of(context).extension<EmberThemeExtension>();
+      final entryDao = ref.watch(entryDaoProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          '待毁',
-          style: TextStyle(
-            color: colorScheme.primary,
-            fontWeight: FontWeight.w600,
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(
+            '待毁',
+            style: TextStyle(
+              color: colorScheme.primary,
+              fontWeight: FontWeight.w600,
+            ),
           ),
+          actions: [
+            // 销毁方式图例
+            IconButton(
+              icon: const Icon(Icons.info_outline_rounded, size: 20),
+              tooltip: '销毁方式图例',
+              onPressed: () => _showStyleLegend(context),
+            ),
+          ],
         ),
-        actions: [
-          // 销毁方式图例
-          IconButton(
-            icon: const Icon(Icons.info_outline_rounded, size: 20),
-            tooltip: '销毁方式图例',
-            onPressed: () => _showStyleLegend(context),
-          ),
-        ],
-      ),
-      body: StreamBuilder<List<Entry>>(
-        stream: _pendingEntriesStream,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+        body: StreamBuilder<List<Entry>>(
+          stream: _pendingEntriesStream,
+          builder: (context, snapshot) {
+            // ignore: avoid_print
+            print('[Ember] StreamBuilder 状态: ${snapshot.connectionState}, hasError: ${snapshot.hasError}, data: ${snapshot.data?.length ?? 0}');
 
-          // 前端过滤：只显示还没到期的条目
-          final allItems = snapshot.data ?? [];
-          final items = allItems
-              .where((e) => e.destroyAt > _nowSeconds)
-              .toList();
+            if (snapshot.hasError) {
+              // ignore: avoid_print
+              print('[Ember] StreamBuilder 错误: ${snapshot.error}');
+              return Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.error_outline, size: 48, color: colorScheme.error),
+                    const SizedBox(height: 16),
+                    Text(
+                      '数据加载失败',
+                      style: TextStyle(color: colorScheme.onSurface, fontSize: 16),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '${snapshot.error}',
+                      style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 12),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              );
+            }
 
-          if (items.isEmpty) {
-            return const EmberEmptyState(
-              message: '没有待销毁的情绪',
-              subMessage: '投放的情绪会在倒计时结束后自动化为灰烬',
-              icon: Icons.hourglass_empty_outlined,
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            // 前端过滤：只显示还没到期的条目
+            final allItems = snapshot.data ?? [];
+            final items = allItems
+                .where((e) => e.destroyAt > _nowSeconds)
+                .toList();
+
+            // ignore: avoid_print
+            print('[Ember] 待毁列表: ${items.length} 条');
+
+            if (items.isEmpty) {
+              return const EmberEmptyState(
+                message: '没有待销毁的情绪',
+                subMessage: '投放的情绪会在倒计时结束后自动化为灰烬',
+                icon: Icons.hourglass_empty_outlined,
+              );
+            }
+
+            // 统计信息
+            final fireOrange = ext?.fireOrange ?? colorScheme.primary;
+            final nearest = items.first;
+            final nearestRemaining = nearest.destroyAt - _nowSeconds;
+
+            return CustomScrollView(
+              slivers: [
+                // 统计卡片
+                SliverToBoxAdapter(
+                  child: _buildStatsCard(
+                    context,
+                    count: items.length,
+                    nearestRemaining: nearestRemaining,
+                    fireOrange: fireOrange,
+                  ),
+                ),
+
+                // 待毁列表
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final entry = items[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: _PendingDestroyCard(
+                          entry: entry,
+                          nowSeconds: _nowSeconds,
+                          onDestroyNow: () => _destroyNow(entryDao, entry),
+                          onCancel: () => _cancelDestroy(entryDao, entry),
+                        ),
+                      );
+                    }, childCount: items.length),
+                  ),
+                ),
+              ],
             );
-          }
-
-          // 统计信息
-          final fireOrange = ext?.fireOrange ?? colorScheme.primary;
-          final nearest = items.first;
-          final nearestRemaining = nearest.destroyAt - _nowSeconds;
-
-          return CustomScrollView(
-            slivers: [
-              // 统计卡片
-              SliverToBoxAdapter(
-                child: _buildStatsCard(
-                  context,
-                  count: items.length,
-                  nearestRemaining: nearestRemaining,
-                  fireOrange: fireOrange,
-                ),
+          },
+        ),
+      );
+    } catch (e, stack) {
+      // ignore: avoid_print
+      print('[Ember] build 方法异常: $e');
+      // ignore: avoid_print
+      print('[Ember] 堆栈: $stack');
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.error_outline, size: 48, color: Theme.of(context).colorScheme.error),
+              const SizedBox(height: 16),
+              Text(
+                '页面加载失败',
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16),
               ),
-
-              // 待毁列表
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate((context, index) {
-                    final entry = items[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: _PendingDestroyCard(
-                        entry: entry,
-                        nowSeconds: _nowSeconds,
-                        onDestroyNow: () => _destroyNow(entryDao, entry),
-                        onCancel: () => _cancelDestroy(entryDao, entry),
-                      ),
-                    );
-                  }, childCount: items.length),
-                ),
+              const SizedBox(height: 8),
+              Text(
+                '$e',
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
+                textAlign: TextAlign.center,
               ),
             ],
-          );
-        },
-      ),
-    );
+          ),
+        ),
+      );
+    }
   }
 
   /// 统计卡片
@@ -238,13 +296,13 @@ class _ToDestroyScreenState extends ConsumerState<ToDestroyScreen> {
   Future<void> _destroyNow(EntryDao dao, Entry entry) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: Theme.of(dialogContext).colorScheme.surfaceContainerHigh,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           '立即销毁？',
           style: TextStyle(
-            color: Theme.of(context).colorScheme.error,
+            color: Theme.of(dialogContext).colorScheme.error,
             fontSize: 17,
             fontWeight: FontWeight.w600,
           ),
@@ -252,19 +310,19 @@ class _ToDestroyScreenState extends ConsumerState<ToDestroyScreen> {
         content: Text(
           '这条情绪将被永久化为灰烬，不可恢复。',
           style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            color: Theme.of(dialogContext).colorScheme.onSurfaceVariant,
             fontSize: 14,
           ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
+            onPressed: () => Navigator.of(dialogContext).pop(false),
             child: const Text('取消'),
           ),
           TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
             style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(dialogContext).colorScheme.error,
             ),
             child: const Text('确认销毁'),
           ),
@@ -274,7 +332,11 @@ class _ToDestroyScreenState extends ConsumerState<ToDestroyScreen> {
 
     if (confirmed == true && mounted) {
       try {
+        // ignore: avoid_print
+        print('[Ember] 开始销毁条目: ${entry.id}');
         await dao.destroyNow(entry.id);
+        // ignore: avoid_print
+        print('[Ember] 销毁完成: ${entry.id}');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -286,7 +348,11 @@ class _ToDestroyScreenState extends ConsumerState<ToDestroyScreen> {
             ),
           );
         }
-      } catch (e) {
+      } catch (e, stack) {
+        // ignore: avoid_print
+        print('[Ember] 销毁失败: $e');
+        // ignore: avoid_print
+        print('[Ember] 堆栈: $stack');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
