@@ -3,9 +3,10 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import 'package:ember/core/constants/destroy_styles.dart';
+import 'package:ember/core/theme/typography.dart';
 import 'destroy_animation.dart';
 
-/// 焚 🔥 — 火焰粒子上升燃烧
+/// 焚 — 文字像纸，从下沿被一条余烬线慢慢吞掉。
 class BurnAnimation extends DestroyAnimationWidget {
   const BurnAnimation({
     super.key,
@@ -28,7 +29,7 @@ class _BurnAnimationState extends State<BurnAnimation>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: Duration(milliseconds: 2000 + (6 - widget.intensity) * 200),
+      duration: Duration(milliseconds: 2200 + (6 - widget.intensity) * 180),
     );
 
     _controller.addStatusListener((status) {
@@ -49,148 +50,127 @@ class _BurnAnimationState extends State<BurnAnimation>
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final t = _controller.value;
+    final fade = t < 0.88 ? 1.0 : (1 - (t - 0.88) / 0.12).clamp(0.0, 1.0);
+
+    final readable = AppTypography.literary.copyWith(
+      color: colorScheme.onSurface,
+      fontSize: 22,
+    );
+    final charred = AppTypography.literary.copyWith(
+      color: const Color(0xFF3A2218),
+      fontSize: 22,
+    );
 
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
-        final size = MediaQuery.of(context).size;
-        return Stack(
-          alignment: Alignment.center,
-          children: [
-            // 文字渐隐
-            if (_controller.value < 0.7)
-              Opacity(
-                opacity: (1.0 - (_controller.value / 0.7)).clamp(0.0, 1.0),
-                child: SizedBox(
-                  width: 280,
-                  child: Text(
-                    widget.textHint ?? '烧掉它',
-                    textAlign: TextAlign.center,
-                    maxLines: 4,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: colorScheme.onSurface,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+        return Center(
+          child: Opacity(
+            opacity: fade,
+            child: SizedBox(
+              width: 280,
+              child: CustomPaint(
+                foregroundPainter: _EdgeBurnPainter(
+                  progress: t,
+                  intensity: widget.intensity,
                 ),
-              ),
-
-            // 火焰粒子
-            CustomPaint(
-              size: size,
-              painter: _FlamePainter(
-                progress: _controller.value,
-                intensity: widget.intensity,
+                child: Stack(
+                  children: [
+                    Text(
+                      widget.textHint ?? '烧掉它',
+                      textAlign: TextAlign.center,
+                      maxLines: 6,
+                      overflow: TextOverflow.ellipsis,
+                      style: charred,
+                    ),
+                    ShaderMask(
+                      blendMode: BlendMode.dstIn,
+                      shaderCallback: (bounds) {
+                        final edge = (1 - t).clamp(0.0, 1.0);
+                        final feather = (edge - 0.045).clamp(0.0, 1.0);
+                        return LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: const [
+                            Colors.white,
+                            Colors.white,
+                            Colors.transparent,
+                          ],
+                          stops: [0, feather, edge],
+                        ).createShader(bounds);
+                      },
+                      child: Text(
+                        widget.textHint ?? '烧掉它',
+                        textAlign: TextAlign.center,
+                        maxLines: 6,
+                        overflow: TextOverflow.ellipsis,
+                        style: readable,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-
-            // 灰烬消散
-            if (_controller.value > 0.8)
-              Opacity(
-                opacity: ((_controller.value - 0.8) / 0.2).clamp(0.0, 1.0),
-                child: Text(
-                  '已化为灰烬',
-                  style: TextStyle(
-                    color: colorScheme.primary.withValues(alpha: 0.8),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w300,
-                  ),
-                ),
-              ),
-          ],
+          ),
         );
       },
     );
   }
 }
 
-class _FlamePainter extends CustomPainter {
+class _EdgeBurnPainter extends CustomPainter {
   final double progress;
   final int intensity;
 
-  _FlamePainter({required this.progress, required this.intensity});
+  _EdgeBurnPainter({required this.progress, required this.intensity});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final rng = Random(42);
-    final particleCount = 15 + intensity * 8;
+    if (progress <= 0 || progress >= 1 || size.height < 2) return;
 
-    for (var i = 0; i < particleCount; i++) {
-      final baseX = rng.nextDouble() * size.width;
-      final baseSpeed = 0.5 + rng.nextDouble() * 0.8;
-      final particleProgress = (progress * baseSpeed * 1.5).clamp(0.0, 1.0);
+    final y = size.height * (1 - progress);
+    final rng = Random(7);
+    final sparks = 5 + intensity;
 
-      if (particleProgress >= 1.0) continue;
+    final glow = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          const Color(0xFFFFB598).withValues(alpha: 0.0),
+          const Color(0xFFE46F3A).withValues(alpha: 0.85),
+          const Color(0xFF591D00).withValues(alpha: 0.0),
+        ],
+        stops: const [0, 0.45, 1],
+      ).createShader(Rect.fromLTWH(0, y - 10, size.width, 22));
+    canvas.drawRect(Rect.fromLTWH(0, y - 10, size.width, 22), glow);
 
-      final y = size.height * (1.0 - particleProgress);
-      final xOffset = (rng.nextDouble() - 0.5) * 40 * sin(particleProgress * pi);
-      final x = baseX + xOffset;
+    canvas.drawLine(
+      Offset(0, y),
+      Offset(size.width, y),
+      Paint()
+        ..color = const Color(0xFFF3DED7).withValues(alpha: 0.9)
+        ..strokeWidth = 1.2
+        ..strokeCap = StrokeCap.round,
+    );
 
-      // 粒子大小随上升减小
-      final baseSize = 4.0 + rng.nextDouble() * 6.0;
-      final particleSize = baseSize * (1.0 - particleProgress * 0.7);
-
-      // 颜色：底部橙红，顶部暗红/灰
-      final t = particleProgress;
-      final color = Color.lerp(
-        const Color(0xFFE46F3A),
-        const Color(0xFF591D00),
-        t,
-      )!.withValues(alpha: 1.0 - t * 0.5);
-
-      final paint = Paint()
-        ..color = color
-        ..style = PaintingStyle.fill;
-
-      // 火焰形状（椭圆+微变形）
-      canvas.drawOval(
-        Rect.fromCenter(
-          center: Offset(x, y),
-          width: particleSize * 1.5,
-          height: particleSize * 2.5,
-        ),
-        paint,
-      );
-
-      // 内核亮色
-      if (t < 0.5) {
-        final coreColor = Color.lerp(
-          const Color(0xFFF3DED7),
-          const Color(0xFFFFB598),
-          t * 2,
-        )!.withValues(alpha: 0.6 * (1.0 - t * 2));
-        canvas.drawOval(
-          Rect.fromCenter(
-            center: Offset(x, y + particleSize * 0.3),
-            width: particleSize * 0.6,
-            height: particleSize,
-          ),
-          Paint()..color = coreColor,
-        );
-      }
-    }
-
-    // 底部光晕
-    if (progress < 0.8) {
-      final glowAlpha = 0.3 * (1.0 - progress / 0.8);
-      final glowPaint = Paint()
-        ..shader = RadialGradient(
-          colors: [
-            const Color(0xFFE46F3A).withValues(alpha: glowAlpha),
-            Colors.transparent,
-          ],
-        ).createShader(Rect.fromLTWH(0, size.height * 0.6, size.width, size.height * 0.4));
-      canvas.drawRect(
-        Rect.fromLTWH(0, size.height * 0.6, size.width, size.height * 0.4),
-        glowPaint,
+    for (var i = 0; i < sparks; i++) {
+      final life = (progress * 1.4 + rng.nextDouble()) % 1.0;
+      if (life > 0.65) continue;
+      final x = rng.nextDouble() * size.width;
+      final rise = life * (18 + intensity * 4);
+      final alpha = (1 - life / 0.65) * 0.8;
+      canvas.drawCircle(
+        Offset(x, y - rise),
+        1.1 + rng.nextDouble() * 0.8,
+        Paint()..color = const Color(0xFFE46F3A).withValues(alpha: alpha),
       );
     }
   }
 
   @override
-  bool shouldRepaint(covariant _FlamePainter oldDelegate) {
+  bool shouldRepaint(covariant _EdgeBurnPainter oldDelegate) {
     return oldDelegate.progress != progress;
   }
 }
