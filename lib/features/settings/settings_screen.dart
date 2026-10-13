@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/pin_service.dart';
 import '../../core/theme/theme_provider.dart';
@@ -240,32 +241,25 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         padding: const EdgeInsets.symmetric(vertical: 8),
         children: [
           // ─── AI 转化 ───────────────────────────────────────────────────
-          _SectionHeader(title: 'AI 转化引擎', icon: Icons.auto_awesome_outlined),
+          _SectionHeader(title: '转化', icon: LucideIcons.feather),
           ListTile(
-            leading: const Icon(Icons.api_outlined),
+            leading: const Icon(LucideIcons.sparkles),
             title: const Text('API 配置'),
             subtitle: Text(_apiConfigured ? '已配置，AI 转化已启用' : '未配置，使用本地模板'),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (_apiConfigured)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: Colors.green.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Text(
-                      'ON',
-                      style: TextStyle(
-                        color: Colors.green,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                      ),
+                  Text(
+                    '已接上',
+                    style: TextStyle(
+                      color: theme.colorScheme.primary,
+                      fontSize: 12,
+                      letterSpacing: 0.4,
                     ),
                   ),
                 const SizedBox(width: 4),
-                const Icon(Icons.chevron_right),
+                const Icon(LucideIcons.chevronRight, size: 18),
               ],
             ),
             onTap: () => Navigator.of(context).push(
@@ -285,9 +279,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const Divider(indent: 16, endIndent: 16, height: 24),
 
           // ─── 安全 ──────────────────────────────────────────────────────
-          _SectionHeader(title: '安全', icon: Icons.shield_outlined),
+          _SectionHeader(title: '安全', icon: LucideIcons.shield),
           SwitchListTile(
-            secondary: const Icon(Icons.lock_outline),
+            secondary: const Icon(LucideIcons.lock),
             title: const Text('应用锁'),
             subtitle: Text(_lockEnabled ? '已启用' : '未启用'),
             value: _lockEnabled,
@@ -295,7 +289,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           if (_lockEnabled && _biometricAvailable)
             SwitchListTile(
-              secondary: const Icon(Icons.fingerprint),
+              secondary: const Icon(LucideIcons.fingerprint),
               title: const Text('生物识别解锁'),
               subtitle: const Text('指纹或面部识别'),
               value: _biometricEnabled,
@@ -303,7 +297,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           if (_lockEnabled)
             ListTile(
-              leading: const Icon(Icons.password_outlined),
+              leading: const Icon(LucideIcons.keyRound),
               title: const Text('修改密码'),
               onTap: _changePin,
             ),
@@ -311,33 +305,33 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const Divider(indent: 16, endIndent: 16, height: 24),
 
           // ─── 外观 ──────────────────────────────────────────────────────
-          _SectionHeader(title: '外观', icon: Icons.palette_outlined),
+          _SectionHeader(title: '外观', icon: LucideIcons.palette),
           ListTile(
-            leading: const Icon(Icons.color_lens_outlined),
+            leading: const Icon(LucideIcons.palette),
             title: const Text('主题'),
             subtitle: Text(_currentThemeLabel),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: const Icon(LucideIcons.chevronRight, size: 18),
             onTap: () => context.go('/theme'),
           ),
 
           const Divider(indent: 16, endIndent: 16, height: 24),
 
           // ─── 提醒 ──────────────────────────────────────────────────────
-          _SectionHeader(title: '提醒', icon: Icons.notifications_outlined),
+          _SectionHeader(title: '提醒', icon: LucideIcons.bell),
           ListTile(
-            leading: const Icon(Icons.alarm_outlined),
+            leading: const Icon(LucideIcons.bell),
             title: const Text('提醒设置'),
             subtitle: const Text('每日情绪提醒 + 免打扰'),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: const Icon(LucideIcons.chevronRight, size: 18),
             onTap: () => context.go('/reminder'),
           ),
 
           const Divider(indent: 16, endIndent: 16, height: 24),
 
           // ─── 数据 ──────────────────────────────────────────────────────
-          _SectionHeader(title: '数据', icon: Icons.storage_outlined),
+          _SectionHeader(title: '数据', icon: LucideIcons.download),
           ListTile(
-            leading: const Icon(Icons.file_download_outlined),
+            leading: const Icon(LucideIcons.download),
             title: const Text('导出统计数据'),
             subtitle: const Text('仅导出脱敏统计 CSV'),
             onTap: _exportData,
@@ -346,15 +340,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const Divider(indent: 16, endIndent: 16, height: 24),
 
           // ─── 关于 ──────────────────────────────────────────────────────
-          _SectionHeader(title: '关于', icon: Icons.info_outlined),
+          _SectionHeader(title: '关于', icon: LucideIcons.info),
           ListTile(
-            leading: const Icon(Icons.policy_outlined),
+            leading: const Icon(LucideIcons.scrollText),
             title: const Text('隐私政策'),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: const Icon(LucideIcons.chevronRight, size: 18),
             onTap: () => context.go('/privacy'),
           ),
           ListTile(
-            leading: const Icon(Icons.info_outline),
+            leading: const Icon(LucideIcons.info),
             title: const Text('版本'),
             trailing: Text('1.2.3',
                 style: TextStyle(color: theme.colorScheme.onSurfaceVariant)),

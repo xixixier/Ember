@@ -53,6 +53,7 @@ class _BurnAnimationState extends State<BurnAnimation>
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
+        final size = MediaQuery.of(context).size;
         return Stack(
           alignment: Alignment.center,
           children: [
@@ -78,7 +79,7 @@ class _BurnAnimationState extends State<BurnAnimation>
 
             // 火焰粒子
             CustomPaint(
-              size: const Size(300, 400),
+              size: size,
               painter: _FlamePainter(
                 progress: _controller.value,
                 intensity: widget.intensity,

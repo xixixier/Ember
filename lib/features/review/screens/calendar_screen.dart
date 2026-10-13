@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'package:ember/core/constants/emotions.dart';
 import 'package:ember/core/theme/ember_theme_extension.dart';
@@ -46,7 +48,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.assessment_outlined),
+            icon: const Icon(LucideIcons.library, size: 20),
+            tooltip: '收藏',
+            onPressed: () => context.push('/collection'),
+          ),
+          IconButton(
+            icon: const Icon(LucideIcons.scrollText, size: 20),
             tooltip: '周报',
             onPressed: () {
               Navigator.of(context).push(
@@ -55,7 +62,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             },
           ),
           IconButton(
-            icon: const Icon(Icons.menu_book_outlined),
+            icon: const Icon(LucideIcons.bookOpen, size: 20),
             tooltip: '年鉴',
             onPressed: () {
               final year = DateTime.now().year;

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/auth_service.dart';
 import '../services/pin_service.dart';
@@ -101,8 +102,8 @@ class _LockScreenState extends ConsumerState<LockScreen> {
             children: [
               const SizedBox(height: 80),
               // 图标
-              Icon(Icons.local_fire_department,
-                  size: 48, color: theme.colorScheme.primary),
+              Icon(LucideIcons.flame,
+                  size: 36, color: theme.colorScheme.primary),
               const SizedBox(height: 16),
               Text('余烬',
                   style: theme.textTheme.headlineMedium?.copyWith(

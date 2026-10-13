@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:ember/core/theme/ember_theme_extension.dart';
@@ -36,28 +37,28 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final ext = Theme.of(context).extension<EmberThemeExtension>()!;
     return [
       _OnboardingPageData(
-        icon: Icons.local_fire_department,
+        icon: LucideIcons.flame,
         title: '欢迎来到余烬',
         subtitle: '一个安全的情绪释放空间',
         description: '在这里，你的情绪不会被评判。\n它们会燃烧、转化、然后消散。',
         color: ext.onboardingWelcome,
       ),
       _OnboardingPageData(
-        icon: Icons.edit_note,
+        icon: LucideIcons.penLine,
         title: '投放你的情绪',
         subtitle: '写下、说出你的不爽',
         description: '文字或语音，选一个情绪和烈度，\n然后把它扔进去。',
         color: ext.onboardingThrow,
       ),
       _OnboardingPageData(
-        icon: Icons.auto_awesome,
+        icon: LucideIcons.feather,
         title: '情绪转化为艺术',
         subtitle: '不堪的文字变成美丽的作品',
         description: '莎翁风格、俳句、反向鸡汤或抽象画，\n让负能量变成有温度的创造。',
         color: ext.onboardingTransform,
       ),
       _OnboardingPageData(
-        icon: Icons.whatshot,
+        icon: LucideIcons.hourglass,
         title: '仪式感地销毁',
         subtitle: '焚、沉、散、烬',
         description: '看着你的情绪化为灰烬、沉入深海、\n随风消散，释放就这样完成。',

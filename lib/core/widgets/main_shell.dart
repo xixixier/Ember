@@ -37,15 +37,6 @@ class MainShell extends StatelessWidget {
           ]),
           StatefulShellBranch(routes: [
             GoRoute(
-              path: '/collection',
-              pageBuilder: (context, state) => _fadeSlide(
-                const CollectionScreen(),
-                state,
-              ),
-            ),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(
               path: '/to-destroy',
               pageBuilder: (context, state) => _fadeSlide(
                 const ToDestroyScreen(),
@@ -74,6 +65,14 @@ class MainShell extends StatelessWidget {
         ],
       ),
       // 全屏路由（淡入淡出，无位移）
+      GoRoute(
+        path: '/collection',
+        parentNavigatorKey: _rootNavigatorKey,
+        pageBuilder: (context, state) => _fadeOnly(
+          const CollectionScreen(),
+          state,
+        ),
+      ),
       GoRoute(
         path: '/privacy',
         parentNavigatorKey: _rootNavigatorKey,

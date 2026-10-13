@@ -76,6 +76,7 @@ class _ScatterAnimationState extends State<ScatterAnimation>
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
+        final size = MediaQuery.of(context).size;
         return Stack(
           alignment: Alignment.center,
           children: [
@@ -99,9 +100,9 @@ class _ScatterAnimationState extends State<ScatterAnimation>
                 ),
               ),
 
-            // 粒子扩散
+            // 散落粒子
             CustomPaint(
-              size: const Size(300, 400),
+              size: size,
               painter: _ScatterPainter(
                 progress: _controller.value,
                 particles: _particles,

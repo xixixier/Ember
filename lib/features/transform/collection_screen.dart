@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:ember/core/providers/database_provider.dart';
 import 'package:ember/core/theme/ember_theme_extension.dart';
+import 'package:ember/core/theme/typography.dart';
 import 'package:ember/core/widgets/ember_card.dart';
 import 'package:ember/features/transform/engines/transform_engine.dart';
 import 'package:ember/features/transform/engines/abstract_art_painter.dart';
@@ -68,9 +69,9 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text('😵', style: TextStyle(fontSize: 36)),
-                        const SizedBox(height: 12),
-                        Text('加载失败，请重启应用', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                        Text('收藏暂时打不开', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+                        const SizedBox(height: 8),
+                        Text('退出再进一次', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
                       ],
                     ),
                   );
@@ -232,8 +233,6 @@ class _ShakespeareCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Text('🎭', style: TextStyle(fontSize: 16)),
-              const SizedBox(width: 6),
               Text(
                 '莎翁剧场',
                 style: TextStyle(
@@ -247,11 +246,9 @@ class _ShakespeareCard extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             content,
-            style: TextStyle(
+            style: AppTypography.shakespeare.copyWith(
               color: ext.shakespeareText,
-              fontSize: 13,
-              height: 1.7,
-              fontStyle: FontStyle.italic,
+              fontSize: 15,
             ),
           ),
         ],
@@ -278,8 +275,6 @@ class _HaikuCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Text('🎋', style: TextStyle(fontSize: 16)),
-              const SizedBox(width: 6),
               Text(
                 '俳句',
                 style: TextStyle(
@@ -295,11 +290,9 @@ class _HaikuCard extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 4),
             child: Text(
               line,
-              style: TextStyle(
+              style: AppTypography.haiku.copyWith(
                 color: ext.haikuText,
-                fontSize: 14,
-                height: 1.6,
-                letterSpacing: 1.5,
+                fontSize: 16,
               ),
             ),
           )),
@@ -325,8 +318,6 @@ class _DarkSoupCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Text('🍲', style: TextStyle(fontSize: 16)),
-              const SizedBox(width: 6),
               Text(
                 '反向鸡汤',
                 style: TextStyle(
@@ -369,8 +360,6 @@ class _ArtCard extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(14, 10, 14, 6),
             child: Row(
               children: [
-                const Text('🎨', style: TextStyle(fontSize: 16)),
-                const SizedBox(width: 6),
                 Text(
                   '抽象画',
                   style: TextStyle(
@@ -418,9 +407,7 @@ class _ArtCard extends StatelessWidget {
     } catch (_) {
       return Container(
         color: ext.artBg,
-        child: const Center(
-          child: Text('🎨', style: TextStyle(fontSize: 24)),
-        ),
+        child: const SizedBox.expand(),
       );
     }
   }

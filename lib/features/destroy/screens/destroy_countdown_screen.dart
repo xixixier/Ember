@@ -21,6 +21,7 @@ class DestroyCountdownScreen extends StatefulWidget {
   final Emotion emotion;
   final int intensity;
   final DestroyStyle destroyStyle;
+  final bool immediate;
 
   const DestroyCountdownScreen({
     super.key,
@@ -29,6 +30,7 @@ class DestroyCountdownScreen extends StatefulWidget {
     required this.emotion,
     required this.intensity,
     required this.destroyStyle,
+    this.immediate = false,
   });
 
   /// 显示全屏倒计时
@@ -39,6 +41,7 @@ class DestroyCountdownScreen extends StatefulWidget {
     required Emotion emotion,
     required int intensity,
     required DestroyStyle destroyStyle,
+    bool immediate = false,
   }) {
     return Navigator.of(context).push<bool>(
       PageRouteBuilder(
@@ -50,6 +53,7 @@ class DestroyCountdownScreen extends StatefulWidget {
           emotion: emotion,
           intensity: intensity,
           destroyStyle: destroyStyle,
+          immediate: immediate,
         ),
         transitionsBuilder: (context, animation, secondary, child) {
           final curved = CurvedAnimation(
@@ -92,6 +96,7 @@ class _DestroyCountdownScreenState extends State<DestroyCountdownScreen>
   void initState() {
     super.initState();
     _remainingSeconds = widget.remainingSeconds;
+    _isComplete = widget.immediate;
 
     // 倒计时控制器
     _countdownController = AnimationController(
@@ -128,7 +133,9 @@ class _DestroyCountdownScreenState extends State<DestroyCountdownScreen>
       }
     });
 
-    _countdownController.forward();
+    if (!widget.immediate) {
+      _countdownController.forward();
+    }
 
     // 粒子控制器
     _particleController = AnimationController(
@@ -236,11 +243,8 @@ class _DestroyCountdownScreenState extends State<DestroyCountdownScreen>
             ),
 
             // 主内容和动画切换
-            SafeArea(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 980),
-                switchInCurve: Curves.easeOutCubic,
-                switchOutCurve: Curves.easeInCubic,
+            Positioned.fill(
+              child: SafeArea(
                 child: _isComplete
                     ? Center(
                         key: const ValueKey('destroy_anim'),

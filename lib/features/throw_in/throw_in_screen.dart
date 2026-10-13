@@ -7,7 +7,6 @@ import 'package:ember/core/constants/emotions.dart';
 import 'package:ember/core/constants/targets.dart';
 import 'package:ember/core/providers/database_provider.dart';
 import 'package:ember/data/database/app_database.dart';
-import 'package:ember/core/theme/color_tokens.dart';
 import 'package:ember/features/throw_in/throw_in_controller.dart';
 import 'package:ember/features/throw_in/widgets/guide_text.dart';
 import 'package:ember/features/throw_in/widgets/text_input_area.dart';
@@ -97,74 +96,65 @@ class _ThrowInScreenState extends ConsumerState<ThrowInScreen> {
               focusNode: _focusNode,
             ),
 
-            // 元数据标签行（设计稿：横向滚动标签条）
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    _MetaTag(
-                      emoji: state.emotion.emoji,
-                      label: state.emotion.label,
-                      color: state.emotion.color,
-                      highlight: state.emotion != Emotion.anger,
-                      onTap: () async {
-                        final result = await EmotionPicker.show(
-                          context,
-                          current: state.emotion,
-                        );
-                        if (result != null) controller.setEmotion(result);
-                      },
-                    ),
-                    const SizedBox(width: 8),
-                    _MetaTag(
-                      emoji: '🎯',
-                      label: state.target == Target.none ? '对象' : state.target.label,
-                      color: colorScheme.primary,
-                      highlight: state.target != Target.none,
-                      onTap: () async {
-                        final result = await TargetPicker.show(
-                          context,
-                          current: state.target,
-                        );
-                        if (result != null) controller.setTarget(result);
-                      },
-                    ),
-                    const SizedBox(width: 8),
-                    _MetaTag(
-                      emoji: '🔥',
-                      label: '烈度 ${state.intensity}/5',
-                      color: ColorTokens.intensityColors[state.intensity - 1],
-                      highlight: state.intensity != 3,
-                      onTap: () async {
-                        final result = await IntensitySlider.show(
-                          context,
-                          current: state.intensity,
-                        );
-                        if (result != null) controller.setIntensity(result);
-                      },
-                    ),
-                    const SizedBox(width: 8),
-                    _MetaTag(
-                      emoji: '⏱',
-                      label: state.destroyTime.label,
-                      color: colorScheme.tertiary,
-                      highlight: state.destroyTime != DestroyTime.hours24,
-                      onTap: () async {
-                        final result = await DestroyTimePicker.show(
-                          context,
-                          currentTime: state.destroyTime,
-                          currentStyle: state.destroyStyle,
-                        );
-                        if (result != null) {
-                          controller.setDestroyTime(result.time);
-                          controller.setDestroyStyle(result.style);
-                        }
-                      },
-                    ),
-                  ],
-                ),
+              padding: const EdgeInsets.fromLTRB(24, 6, 24, 2),
+              child: Wrap(
+                spacing: 0,
+                runSpacing: 4,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  _QuietChoice(
+                    label: state.emotion.label,
+                    active: state.emotion != Emotion.anger,
+                    onTap: () async {
+                      final result = await EmotionPicker.show(
+                        context,
+                        current: state.emotion,
+                      );
+                      if (result != null) controller.setEmotion(result);
+                    },
+                  ),
+                  const _QuietDot(),
+                  _QuietChoice(
+                    label: state.target == Target.none ? '对象' : state.target.label,
+                    active: state.target != Target.none,
+                    onTap: () async {
+                      final result = await TargetPicker.show(
+                        context,
+                        current: state.target,
+                      );
+                      if (result != null) controller.setTarget(result);
+                    },
+                  ),
+                  const _QuietDot(),
+                  _QuietChoice(
+                    label: '烈度 ${state.intensity}',
+                    active: state.intensity != 3,
+                    onTap: () async {
+                      final result = await IntensitySlider.show(
+                        context,
+                        current: state.intensity,
+                      );
+                      if (result != null) controller.setIntensity(result);
+                    },
+                  ),
+                  const _QuietDot(),
+                  _QuietChoice(
+                    label: '${state.destroyTime.label} · ${state.destroyStyle.label}',
+                    active: state.destroyTime != DestroyTime.hours24,
+                    onTap: () async {
+                      final result = await DestroyTimePicker.show(
+                        context,
+                        currentTime: state.destroyTime,
+                        currentStyle: state.destroyStyle,
+                      );
+                      if (result != null) {
+                        controller.setDestroyTime(result.time);
+                        controller.setDestroyStyle(result.style);
+                      }
+                    },
+                  ),
+                ],
               ),
             ),
 
@@ -361,57 +351,53 @@ class _ThrowInScreenState extends ConsumerState<ThrowInScreen> {
   }
 }
 
-/// 横向标签（设计稿样式：圆角胶囊 + emoji + 文字）
-class _MetaTag extends StatelessWidget {
-  final String emoji;
+/// 投放页的次要选择：一行细字，点开才展开。
+class _QuietChoice extends StatelessWidget {
   final String label;
-  final Color color;
-  final bool highlight;
+  final bool active;
   final VoidCallback onTap;
 
-  const _MetaTag({
-    required this.emoji,
+  const _QuietChoice({
     required this.label,
-    required this.color,
-    this.highlight = false,
+    required this.active,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-
     return GestureDetector(
       onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: highlight
-              ? color.withValues(alpha: 0.15)
-              : colorScheme.surfaceContainerHigh,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: highlight
-                ? color.withValues(alpha: 0.5)
-                : colorScheme.outline.withValues(alpha: 0.2),
-            width: highlight ? 1.0 : 0.5,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 8),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: active ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
+            fontSize: 13,
+            height: 1.2,
+            letterSpacing: 0.4,
+            fontWeight: active ? FontWeight.w500 : FontWeight.w400,
           ),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(emoji, style: const TextStyle(fontSize: 14)),
-            const SizedBox(width: 5),
-            Text(
-              label,
-              style: TextStyle(
-                color: highlight ? color : colorScheme.onSurfaceVariant,
-                fontSize: 12,
-                fontWeight: highlight ? FontWeight.w600 : FontWeight.w400,
-              ),
-            ),
-          ],
+      ),
+    );
+  }
+}
+
+class _QuietDot extends StatelessWidget {
+  const _QuietDot();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      child: Text(
+        '·',
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+          fontSize: 13,
         ),
       ),
     );

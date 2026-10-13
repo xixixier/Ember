@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-
+import 'package:ember/core/theme/typography.dart';
 import 'package:ember/features/transform/engines/transform_engine.dart';
 import 'package:ember/features/transform/engines/abstract_art_painter.dart';
 import 'package:ember/features/transform/widgets/ash_text_reveal.dart';
@@ -151,12 +151,10 @@ class _TransformResultCardState extends State<TransformResultCard> {
         child: SingleChildScrollView(
           child: AshTextReveal(
             text: widget.result.content,
-            style: TextStyle(
-              color: colorScheme.onSurface,
-              fontSize: 16,
-              height: 1.8,
-              fontWeight: FontWeight.w400,
-            ),
+            style: (widget.result.type == TransformType.haiku
+                    ? AppTypography.haiku
+                    : AppTypography.literary)
+                .copyWith(color: colorScheme.onSurface),
           ),
         ),
       ),

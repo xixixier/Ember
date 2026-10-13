@@ -9,6 +9,7 @@ import 'package:ember/core/providers/database_provider.dart';
 import 'package:ember/core/widgets/ember_card.dart';
 import 'package:ember/core/widgets/ember_empty_state.dart';
 import 'package:ember/data/database/app_database.dart';
+import 'destroy_countdown_screen.dart';
 
 /// 「待毁」Tab 页面
 /// 显示所有等待销毁的条目，支持取消销毁和立即销毁
@@ -332,22 +333,26 @@ class _ToDestroyScreenState extends ConsumerState<ToDestroyScreen> {
 
     if (confirmed == true && mounted) {
       try {
+        // 先播放全屏毁灭动画
+        final animResult = await DestroyCountdownScreen.show(
+          context,
+          content: entry.rawText,
+          emotion: Emotion.fromName(entry.emotionTag),
+          destroyStyle: DestroyStyle.fromName(entry.destroyStyle),
+          intensity: entry.intensity,
+          remainingSeconds: 0,
+          immediate: true,
+        );
+        
+        if (animResult != true) return; // 动画被中断
+
         // ignore: avoid_print
         print('[Ember] 开始销毁条目: ${entry.id}');
         await dao.destroyNow(entry.id);
         // ignore: avoid_print
         print('[Ember] 销毁完成: ${entry.id}');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                '已销毁 ${DestroyStyle.fromName(entry.destroyStyle).emoji}',
-              ),
-              duration: const Duration(seconds: 2),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
+        
+        // 销毁完成后，不需要再显示丑陋的 snackbar，因为全屏动画已经传达了销毁感。
       } catch (e, stack) {
         // ignore: avoid_print
         print('[Ember] 销毁失败: $e');

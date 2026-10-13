@@ -53,6 +53,7 @@ class _SinkAnimationState extends State<SinkAnimation>
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
+        final size = MediaQuery.of(context).size;
         return Stack(
           alignment: Alignment.center,
           children: [
@@ -78,9 +79,9 @@ class _SinkAnimationState extends State<SinkAnimation>
               ),
             ),
 
-            // 水面动画
+            // 水纹
             CustomPaint(
-              size: const Size(300, 400),
+              size: size,
               painter: _WaterPainter(
                 progress: _controller.value,
                 intensity: widget.intensity,

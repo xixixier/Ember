@@ -72,6 +72,7 @@ class _AshAnimationState extends State<AshAnimation>
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
+        final size = MediaQuery.of(context).size;
         return Stack(
           alignment: Alignment.center,
           children: [
@@ -95,9 +96,9 @@ class _AshAnimationState extends State<AshAnimation>
                 ),
               ),
 
-            // 余烬粒子
+            // 飞灰粒子
             CustomPaint(
-              size: const Size(300, 400),
+              size: size,
               painter: _AshPainter(
                 progress: _controller.value,
                 particles: _particles,

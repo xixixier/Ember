@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../theme/ember_theme_extension.dart';
 
 /// 余烬玻璃拟态底部导航栏
@@ -15,11 +16,10 @@ class EmberNavigationBar extends StatelessWidget {
   final ValueChanged<int> onDestinationSelected;
 
   static const _destinations = [
-    _NavDestination(icon: Icons.local_fire_department_outlined, activeIcon: Icons.local_fire_department_outlined, label: '投放'),
-    _NavDestination(icon: Icons.auto_awesome_outlined, activeIcon: Icons.auto_awesome_outlined, label: '收藏'),
-    _NavDestination(icon: Icons.whatshot_outlined, activeIcon: Icons.whatshot_outlined, label: '待毁'),
-    _NavDestination(icon: Icons.bar_chart_outlined, activeIcon: Icons.bar_chart_outlined, label: '回望'),
-    _NavDestination(icon: Icons.person_outline, activeIcon: Icons.person_outline, label: '我的'),
+    _NavDestination(icon: LucideIcons.flame, label: '投放'),
+    _NavDestination(icon: LucideIcons.hourglass, label: '待毁'),
+    _NavDestination(icon: LucideIcons.moon, label: '回望'),
+    _NavDestination(icon: LucideIcons.user, label: '我的'),
   ];
 
   const EmberNavigationBar({
@@ -52,7 +52,7 @@ class EmberNavigationBar extends StatelessWidget {
               borderRadius: BorderRadius.circular(9999),
             ),
             child: SizedBox(
-              height: 64,
+              height: 68,
               child: Row(
                 children: List.generate(
                   _destinations.length,
@@ -107,11 +107,21 @@ class _NavItem extends StatelessWidget {
         children: [
           Icon(
             destination.icon,
-            size: 24,
+            size: 22,
             color: iconColor,
           ),
+          const SizedBox(height: 3),
+          Text(
+            destination.label,
+            style: TextStyle(
+              fontSize: 10,
+              height: 1.1,
+              letterSpacing: 0.6,
+              fontWeight: FontWeight.w400,
+              color: isSelected ? inactiveColor : textWeak,
+            ),
+          ),
           const SizedBox(height: 4),
-          // 底部小指示点 (tiny glowing ember dot)
           AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeOutCubic,
@@ -139,12 +149,10 @@ class _NavItem extends StatelessWidget {
 
 class _NavDestination {
   final IconData icon;
-  final IconData activeIcon;
   final String label;
 
   const _NavDestination({
     required this.icon,
-    required this.activeIcon,
     required this.label,
   });
 }

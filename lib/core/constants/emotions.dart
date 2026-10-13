@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
 enum Emotion {
-  anger('愤怒', '😤', '#E24B4A'),
-  depression('沮丧', '😞', '#5F5E5A'),
-  anxiety('焦虑', '😰', '#7F77DD'),
-  breakdown('崩溃', '🤯', '#D85A30'),
-  irritation('烦躁', '😒', '#BA7517'),
-  custom('自定义', '🎭', '#534AB7');
+  anger('愤怒', '😤', '#8C3A32'),
+  depression('沮丧', '😞', '#5C6570'),
+  anxiety('焦虑', '😰', '#6A6488'),
+  breakdown('崩溃', '🤯', '#6E3038'),
+  irritation('烦躁', '😒', '#8A6840'),
+  custom('自定义', '🎭', '#6A6258');
 
   final String label;
   final String emoji;

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:ember/core/widgets/ember_empty_state.dart';
 
 /// 空收藏状态 — 使用 EmberEmptyState 呼吸光效果
@@ -12,7 +13,7 @@ class EmptyCollection extends StatelessWidget {
       child: EmberEmptyState(
         message: '还没有收藏',
         subMessage: '投放情绪后选择转化\n值得留住的文字会被收藏在这里',
-        icon: Icons.auto_awesome_outlined,
+        icon: LucideIcons.library,
       ),
     );
   }
